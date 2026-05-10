@@ -1,0 +1,24 @@
+{
+  "approved": false,
+  "feedback": "The implementation covers most acceptance criteria structurally (--help, one-shot backwards compat, graceful shutdown, initial-sync-then-watch), but contains a critical defect in the watch event filter that prevents auto-sync from triggering when models.json is saved via atomic replace — the default for most modern editors. This is a BLOCKER that needs to be fixed before approval.\n\n## Summary\n- BLOCKER: event filter `if (eventType !== 'change') return;` silently drops 'rename' events caused by atomic file replacements. This means editing models.json with vim, VSCode, nano, or any editor using write-to-temp + rename will NOT trigger auto-sync.\n- WARNING: `main()` calls `process.exit(0)` when no pi models are found, preventing `watchMode()` from ever starting. If models.json doesn't exist at launch (but is created later), the watch never starts.\n- WARNING: `fs.watch` return value (FSWatcher) not captured, so the watcher cannot be properly closed on shutdown (though process.exit works, it's not idiomatic).",
+  "findings": [
+    {
+      "severity": "BLOCKER",
+      "description": "The watch handler filters out all events where `eventType !== 'change'`. However, atomic file replacements (write-to-temp-file + rename), which are the default save strategy for vim, VSCode, nano, emacs, and many other editors, emit `rename` events — not `change`. This causes the auto-sync to be silently skipped on every editor save. Verified on Windows; same behavior occurs on Linux (inotify) and macOS (FSEvents). The fix should either (a) also handle `'rename'` events and re-parse the file, or (b) watch the parent directory `~/.pi/agent/` instead of the file directly, filtering by filename, which is the Node.js-recommended pattern for reliable cross-platform file watching.",
+      "file": "scripts/sync-models.js",
+      "line": "103"
+    },
+    {
+      "severity": "WARNING",
+      "description": "When `loadPiModels()` returns an empty object (file doesn't exist or has no providers), `main()` calls `process.exit(0)` at line ~87. This causes the `--watch` command to exit without ever starting the watcher. If the user runs `--watch` before models.json is created, they get a one-shot message and then the script terminates silently. Consider removing the early `process.exit(0)` and instead allowing `watchMode()` to start (or logging a warning that watching will begin when the file appears). Note: watching a non-existent file directly is not possible on all platforms, so watching the parent directory would be required for full robustness.",
+      "file": "scripts/sync-models.js",
+      "line": "87"
+    },
+    {
+      "severity": "WARNING",
+      "description": "The `fs.watch()` return value (an `fs.FSWatcher` instance) is not captured. This means the watcher cannot be explicitly closed during shutdown (the `shutdown` function only logs and exits). While `process.exit(0)` terminates the process regardless, this prevents proper resource cleanup and is not idiomatic. Consider storing the watcher reference and calling `.close()` in the shutdown handler.",
+      "file": "scripts/sync-models.js",
+      "line": "108"
+    }
+  ]
+}

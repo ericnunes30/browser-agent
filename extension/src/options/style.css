@@ -1,0 +1,334 @@
+/* ─── Claude Design System for Options Page ──────────────────── */
+
+:root {
+  --color-brand: hsl(15, 63.1%, 59.6%);
+  --color-brand-hover: hsl(15, 63.1%, 52%);
+  --color-bg-000: hsl(60, 2.1%, 18.4%);
+  --color-bg-100: hsl(60, 2.7%, 14.5%);
+  --color-bg-200: hsl(30, 3.3%, 11.8%);
+  --color-bg-300: hsl(60, 2.6%, 7.6%);
+  --color-text-000: hsl(48, 33.3%, 97.1%);
+  --color-text-200: hsl(50, 9%, 73.7%);
+  --color-text-400: hsl(48, 4.8%, 59.2%);
+  --color-border-100: hsla(51, 16.5%, 84.5%, 0.15);
+  --color-border-200: hsla(51, 16.5%, 84.5%, 0.25);
+  --color-success: hsl(120, 40%, 50%);
+  --color-error: hsl(0, 60%, 55%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--color-bg-100);
+  color: var(--color-text-000);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* ─── Container ──────────────────────────────────────────────── */
+
+.options-container {
+  width: 100%;
+  max-width: 580px;
+}
+
+/* ─── Header ─────────────────────────────────────────────────── */
+
+.options-header {
+  margin-bottom: 28px;
+}
+
+.options-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--color-text-000);
+}
+
+.options-header p {
+  font-size: 13px;
+  color: var(--color-text-400);
+}
+
+/* ─── Provider card ──────────────────────────────────────────── */
+
+.provider-section {
+  background: var(--color-bg-000);
+  border: 0.5px solid var(--color-border-100);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.provider-section h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-000);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 0.5px solid var(--color-border-100);
+}
+
+.provider-section label {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.provider-section input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--color-bg-200);
+  border: 0.5px solid var(--color-border-100);
+  border-radius: 8px;
+  color: var(--color-text-000);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.provider-section input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 1px var(--color-brand);
+}
+
+.provider-section input::placeholder {
+  color: var(--color-text-400);
+  opacity: 0.6;
+}
+
+.provider-section select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--color-bg-200);
+  border: 0.5px solid var(--color-border-100);
+  border-radius: 8px;
+  color: var(--color-text-000);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%23999' d='M213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.provider-section select:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 1px var(--color-brand);
+}
+
+.provider-section select option {
+  background: var(--color-bg-200);
+  color: var(--color-text-000);
+}
+
+/* ─── Test row ───────────────────────────────────────────────── */
+
+.test-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.test-result {
+  font-size: 12px;
+}
+
+.test-result.ok {
+  color: var(--color-success);
+}
+
+.test-result.fail {
+  color: var(--color-error);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────── */
+
+.btn-test {
+  background: var(--color-bg-200);
+  color: var(--color-text-000);
+  border: 0.5px solid var(--color-border-100);
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-test:hover {
+  background: var(--color-border-100);
+}
+
+.btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-save {
+  background: var(--color-brand);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-save:hover {
+  background: var(--color-brand-hover);
+}
+
+.btn-reset {
+  background: transparent;
+  color: var(--color-text-400);
+  border: 0.5px solid var(--color-border-100);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-reset:hover {
+  background: var(--color-border-100);
+}
+
+/* ─── Actions row ────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.saved-indicator {
+  color: var(--color-success);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-200);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-300);
+}
+
+/* ─── Domain Lists ──────────────────────────────────────────── */
+
+.domain-list {
+  margin-bottom: 16px;
+}
+
+.domain-list h3 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.domain-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.domain-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--color-bg-200);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--color-text-000);
+}
+
+.empty-list {
+  font-size: 12px;
+  color: var(--color-text-400);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.btn-small {
+  background: transparent;
+  color: var(--color-text-400);
+  border: 0.5px solid var(--color-border-100);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-small:hover {
+  background: var(--color-border-100);
+}
+
+.add-domain-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.add-domain-row input {
+  flex: 1;
+  padding: 8px 10px;
+  background: var(--color-bg-200);
+  border: 0.5px solid var(--color-border-100);
+  border-radius: 8px;
+  color: var(--color-text-000);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.add-domain-row input:focus {
+  border-color: var(--color-brand);
+}

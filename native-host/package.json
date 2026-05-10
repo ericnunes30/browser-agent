@@ -1,0 +1,20 @@
+{
+  "name": "browser-agent-host",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pi SDK Native Messaging Host for BrowserAgent",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "install:host": "node dist/install.js"
+  },
+  "dependencies": {
+    "@mariozechner/pi-coding-agent": "latest",
+    "@sinclair/typebox": "^0.34.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}

@@ -1,0 +1,107 @@
+{"feature":"browser-extension","task":"T1","phase":"planner","status":"completed","ts":1778165456}
+{"phase":"executor","status":"completed","task":"T1","feature":"browser-extension","files":["package.json","tsconfig.json","vite.config.ts","extension/manifest.json","extension/sidepanel.html","extension/options.html","extension/offscreen.html","extension/icons/icon16.png","extension/icons/icon32.png","extension/icons/icon48.png","extension/icons/icon128.png","extension/_locales/pt_BR/messages.json","extension/_locales/en/messages.json","extension/src/service-worker/index.ts","extension/src/service-worker/messages.ts","extension/src/service-worker/tab-group.ts","extension/src/content-scripts/accessibility-tree.ts","extension/src/content-scripts/agent-indicator.ts","extension/src/sidepanel/App.tsx","extension/src/sidepanel/main.tsx","extension/src/options/App.tsx","extension/src/options/main.tsx","extension/src/offscreen/offscreen.ts","extension/config/models.default.json","package-lock.json","dist/"],"ts":1778170142}
+{"phase":"reviewer","status":"approved","task":"T1","feature":"browser-extension","ts":1778170615}
+{"phase":"planner","status":"completed","feature":"browser-extension","task":"T2","ts":1778170777}
+{"files":[".gitignore","extension/src/service-worker/messages.ts","extension/src/service-worker/tab-group.ts","extension/src/service-worker/index.ts"],"phase":"executor","status":"completed","feature":"browser-extension","task":"T2","ts":1778171189}
+{"status":"completed","phase":"planner","feature":"browser-extension","task":"T3","ts":1778171922}
+{"status":"completed","phase":"researcher","feature":"browser-extension","task":"T3","ts":1778172240}
+{"files":["extension/src/service-worker/providers/types.ts","extension/src/service-worker/providers/registry.ts","extension/src/service-worker/providers/sse-parser.ts","extension/src/service-worker/providers/openai.ts","extension/src/service-worker/providers/anthropic.ts","extension/src/service-worker/messages.ts","extension/src/service-worker/index.ts","extension/config/models.default.json"],"status":"completed","phase":"executor","feature":"browser-extension","task":"T3","ts":1778172845}
+{"status":"rejected","feedback":"BLOCKER B1: chat:abort never calls abortController.abort(). BLOCKER B2: tool:start passes entire ChatChunk as args instead of structured metadata { toolCallId, toolName }.","phase":"reviewer","feature":"browser-extension","task":"T3","attempt":1,"ts":1778173200}
+{"files":["extension/src/service-worker/index.ts","extension/src/service-worker/messages.ts"],"attempt":2,"status":"completed","phase":"executor","feature":"browser-extension","task":"T3","ts":1778173361}
+{"status":"approved","phase":"reviewer","attempt":2,"feature":"browser-extension","task":"T3","ts":1778173750}
+{"status":"completed","phase":"planner","feature":"browser-extension","task":"T4","ts":1778173953}
+{"files":["extension/src/content-scripts/accessibility-tree.ts","extension/src/content-scripts/agent-indicator.ts"],"status":"completed","phase":"executor","feature":"browser-extension","task":"T4","ts":1778174493}
+{"status":"completed","phase":"planner","feature":"browser-extension","task":"T5","ts":1778175009}
+{"status":"completed","phase":"researcher","feature":"browser-extension","task":"T5","ts":1778175277}
+{"files":["extension/src/service-worker/tool-executor.ts","extension/src/service-worker/screenshot.ts","extension/src/service-worker/index.ts","extension/src/service-worker/messages.ts","extension/src/service-worker/providers/types.ts","extension/src/service-worker/providers/anthropic.ts","extension/src/service-worker/providers/openai.ts","extension/src/service-worker/providers/sse-parser.ts"],"status":"completed","phase":"executor","feature":"browser-extension","task":"T5","ts":1778176074}
+{"attempt":1,"feedback":"BLOCKER B1: Tool schemas OpenAI-only, Anthropic needs conversion. B2: Multi-turn history uses Anthropic format for both providers. B3: Tool result content undefined on success.","status":"rejected","phase":"reviewer","feature":"browser-extension","task":"T5","ts":1778176640}
+{"files":["extension/src/service-worker/index.ts","extension/src/service-worker/tool-executor.ts","extension/src/service-worker/screenshot.ts"],"attempt":2,"status":"completed","phase":"executor","feature":"browser-extension","task":"T5","ts":1778176964}
+{"attempt":2,"feedback":"REJECTED: New BLOCKER - orphan chrome.tabs.onUpdated listener on navigate timeout (line 41). Listener never removed when timeout fires, causing permanent event leak.","status":"rejected","phase":"reviewer","feature":"browser-extension","task":"T5","ts":1778177411}
+{"files":["extension/src/service-worker/tool-executor.ts","extension/src/service-worker/screenshot.ts","extension/src/service-worker/index.ts"],"attempt":3,"status":"completed","phase":"executor","feature":"browser-extension","task":"T5","ts":1778231195}
+{"attempt":3,"feature":"browser-extension","phase":"reviewer","status":"approved","task":"T5","ts":1778233255}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T6","ts":1778233365}
+{"feature":"browser-extension","files":["extension/src/side-panel/ChatContext.tsx","extension/src/side-panel/components/Header.tsx","extension/src/side-panel/components/ChatWindow.tsx","extension/src/side-panel/components/MessageBubble.tsx","extension/src/side-panel/components/ChatInput.tsx","extension/src/side-panel/App.tsx","extension/src/side-panel/index.tsx","extension/src/side-panel/style.css"],"phase":"executor","status":"completed","task":"T6","ts":1778233541}
+{"feature":"browser-extension","phase":"reviewer","status":"approved","task":"T6","ts":1778233663}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T7","ts":1778233727}
+{"feature":"browser-extension","files":["extension/src/options/App.tsx","extension/src/options/main.tsx","extension/src/options/style.css"],"phase":"executor","status":"completed","task":"T7","ts":1778233911}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T8","ts":1778234142}
+{"feature":"browser-extension","phase":"researcher","status":"completed","task":"T8","ts":1778234271}
+{"feature":"browser-extension","files":["extension/src/service-worker/permissions.ts","extension/src/service-worker/index.ts","extension/src/service-worker/messages.ts","extension/src/side-panel/ChatContext.tsx","extension/src/side-panel/components/MessageBubble.tsx","extension/src/side-panel/style.css"],"phase":"executor","status":"completed","task":"T8","ts":1778234572}
+{"attempt":1,"feature":"browser-extension","feedback":"BLOCKER: ChatContext.tsx line 81 reads msg.tool from tool:result but type doesn't include it → tool status stuck in pending. WARNING: allow_once not persisted.","phase":"reviewer","status":"rejected","task":"T8","ts":1778234821}
+{"attempt":2,"feature":"browser-extension","files":["extension/src/service-worker/index.ts","extension/src/service-worker/messages.ts","extension/src/service-worker/permissions.ts"],"phase":"executor","status":"completed","task":"T8","ts":1778234945}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T9","ts":1778235155}
+{"feature":"browser-extension","files":["extension/src/content-scripts/agent-indicator.ts","extension/src/service-worker/tool-executor.ts"],"phase":"executor","status":"completed","task":"T9","ts":1778235331}
+{"attempt":2,"feature":"browser-extension","files":["extension/src/content-scripts/agent-indicator.ts"],"phase":"executor","status":"completed","task":"T9","ts":1778235558}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T10","ts":1778235690}
+{"feature":"browser-extension","files":["extension/offscreen.html","extension/src/offscreen/offscreen.tsx","extension/src/offscreen/style.css","extension/src/service-worker/offscreen-manager.ts","vite.config.ts"],"phase":"executor","status":"completed","task":"T10","ts":1778236004}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T11","ts":1778236200}
+{"feature":"browser-extension","files":["extension/src/service-worker/scheduler.ts","extension/src/service-worker/messages.ts","extension/src/service-worker/index.ts"],"phase":"executor","status":"completed","task":"T11","ts":1778236346}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T12","ts":1778236684}
+{"feature":"browser-extension","files":["extension/src/service-worker/mcp-bridge.ts","extension/docs/mcp-bridge.md"],"phase":"executor","status":"completed","task":"T12","ts":1778236824}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T13","ts":1778236952}
+{"feature":"browser-extension","files":["extension/_locales/en/messages.json","extension/_locales/pt_BR/messages.json","extension/src/utils/i18n.ts","extension/src/side-panel/components/Header.tsx","extension/src/side-panel/components/ChatInput.tsx","extension/src/side-panel/components/MessageBubble.tsx","extension/src/options/App.tsx"],"phase":"executor","status":"completed","task":"T13","ts":1778237153}
+{"feature":"browser-extension","phase":"planner","status":"completed","task":"T14","ts":1778237325}
+{"feature":"browser-extension","files":["scripts/sync-models.js","extension/config/models.custom.json"],"phase":"executor","status":"completed","task":"T14","ts":1778237429}
+{"feature":"web-search-fetch","task":"T1","phase":"planner","status":"success","ts":1778284769}
+{"feature":"web-search-fetch","phase":"reviewer","status":"approved","task":"T1","ts":1778284897}
+{"feature":"web-search-fetch","phase":"planner","status":"success","task":"T2","ts":1778284942}
+{"feature":"web-search-fetch","phase":"reviewer","status":"approved","task":"T2","ts":1778285022}
+{"feature":"web-search-fetch","phase":"planner","status":"success","task":"T3","ts":1778285126}
+{"feature":"web-search-fetch","phase":"reviewer","status":"approved","task":"T3","ts":1778285315}
+{"feature":"web-search-fetch","phase":"planner","status":"success","task":"T4","ts":1778285359}
+{"feature":"web-search-fetch","phase":"reviewer","status":"approved","task":"T4","ts":1778285595}
+{"feature":"web-search-fetch","phase":"planner","status":"needs-research","task":"T5","ts":1778285644}
+{"feature":"web-search-fetch","phase":"researcher","status":"success","task":"T5","ts":1778285699}
+{"feature":"web-search-fetch","phase":"reviewer","status":"rejected","task":"T5","attempt":1,"ts":1778285911}
+{"feature":"web-search-fetch","phase":"reviewer","status":"approved","task":"T5","attempt":2,"ts":1778286135}
+{"feature":"web-search-fetch","phase":"planner","status":"success","task":"T6","ts":1778286174}
+{"feature":"web-search-fetch","phase":"reviewer","status":"approved","task":"T6","ts":1778286257}
+{"feature":"site-permissions","phase":"planner","status":"needs-research","task":"T1","ts":1778286343}
+{"feature":"site-permissions","phase":"researcher","status":"success","task":"T1","ts":1778286470}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T1","ts":1778286715}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T2","ts":1778286962}
+{"feature":"site-permissions","phase":"reviewer","status":"rejected","task":"T3","attempt":1,"ts":1778287164}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T3","attempt":2,"ts":1778287361}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T4","ts":1778287595}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T5","ts":1778287757}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T6","ts":1778288121}
+{"feature":"site-permissions","phase":"reviewer","status":"approved","task":"T7","ts":1778288396}
+{"feature":"tab-groups","phase":"reviewer","status":"approved","task":"T1","ts":1778288588}
+{"feature":"tab-groups","phase":"reviewer","status":"approved","task":"T2","ts":1778288733}
+{"feature":"tab-groups","phase":"reviewer","status":"approved","task":"T4","ts":1778288961}
+{"feature":"commands-and-automation","phase":"reviewer","status":"rejected","task":"T1","attempt":1,"ts":1778289345}
+{"feature":"commands-and-automation","phase":"reviewer","status":"approved","task":"T1","attempt":3,"ts":1778290100}
+{"feature":"commands-and-automation","phase":"reviewer","status":"rejected","task":"T2","attempt":1,"ts":1778290404}
+{"feature":"commands-and-automation","phase":"reviewer","status":"approved","task":"T2","attempt":4,"ts":1778291486}
+{"feature":"commands-and-automation","phase":"reviewer","status":"rejected","task":"T3","attempt":1,"ts":1778291867}
+{"feature":"commands-and-automation","phase":"reviewer","status":"approved","task":"T3","attempt":2,"ts":1778292494}
+{"feature":"visual-indicators-complete","phase":"reviewer","status":"rejected","task":"T1","attempt":1,"ts":1778293055}
+{"feature":"visual-indicators-complete","phase":"reviewer","status":"approved","task":"T1","attempt":3,"ts":1778294351}
+{"feature":"file-tools","phase":"reviewer","status":"approved","task":"T1","ts":1778324275}
+{"feature":"file-tools","phase":"reviewer","status":"approved","task":"T2","ts":1778324495}
+{"feature":"file-tools","phase":"reviewer","status":"rejected","task":"T3","attempt":1,"ts":1778324920}
+{"feature":"file-tools","phase":"reviewer","status":"approved","task":"T3","attempt":2,"ts":1778325308}
+{"feature":"file-tools","phase":"reviewer","status":"rejected","task":"T4","attempt":1,"ts":1778325558}
+{"feature":"file-tools","phase":"reviewer","status":"rejected","task":"T4","attempt":2,"ts":1778325885}
+{"feature":"file-tools","phase":"reviewer","status":"approved","task":"T4","attempt":3,"ts":1778326171}
+{"feature":"file-tools","phase":"reviewer","status":"approved","task":"T5","ts":1778326508}
+{"feature":"file-tools","phase":"reviewer","status":"approved","task":"T7","ts":1778327187}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"rejected","task":"T1","attempt":1,"ts":1778328186}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"approved","task":"T1","attempt":2,"ts":1778328803}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"approved","task":"T2","ts":1778329057}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"approved","task":"T3","ts":1778329295}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"approved","task":"T4","ts":1778329764}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"approved","task":"T5","ts":1778329951}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"rejected","task":"T6","attempt":1,"ts":1778332310}
+{"feature":"pi-model-tracker","phase":"reviewer","status":"approved","task":"T6","attempt":2,"ts":1778332575}
+{"feature":"browser-agent","task":"BUG-NMH","phase":"diagnose","status":"root_cause_found","ts":1778409230}
+{"feature":"browser-agent","phase":"fix-plan","status":"approved","task":"BUG-NMH","ts":1778409857}
+{"feature":"browser-agent","task":"BUG-NMH","phase":"fix-execute","status":"installed","ts":1778410363}
+{"feature":"browser-agent","task":"BUG-NMH","phase":"verify","status":"awaiting_user_test","ts":1778410371}
+{"feature":"browser-agent","task":"BUG-NMH","phase":"diagnose","status":"root_cause_found","feedback":"Providers não carregados: Pi SDK não tem provedores customizados registrados (opencode-go, minimax, xiaomimimo). ModelRegistry.registerProvider() necessário.","ts":1778411126}
+{"feature":"browser-agent","task":"BUG-NMH","phase":"fix-execute","status":"implemented","feedback":"Native host modificado para registrar provedores customizados (opencode-go, minimax, xiaomimimo, test-provider) via ModelRegistry.registerProvider() + AuthStorage.set()","ts":1778411724}
+{"feature":"browser-agent","task":"BUG-NMH","phase":"verify","status":"pass","ts":1778411850}
+{"feature":"browser-agent","phase":"fix-execute","status":"protocol_fixed","task":"BUG-NMH","feedback":"Protocolo Native Messaging corrigido: agora usa 4-byte length prefix (uint32 LE) + JSON. console.log→console.error no pisdk-host.ts. Tracking de operações assíncronas adicionado.","ts":1778412850}
+{"feature":"browser-agent","phase":"verify","status":"awaiting_user_test","task":"BUG-NMH","ts":1778412864}
+{"feature":"browser-agent","phase":"fix-execute","status":"model_before_session_fixed","task":"BUG-NMH","feedback":"Corrigido: setModel() agora armazena modelo em selectedModel mesmo sem session existir. createSession() aplica selectedModel após criar a session. Antes o prompt criava sessão sem modelo e travava.","ts":1778414055}
+{"feature":"browser-agent","phase":"fix-execute","status":"api_compat_fixed","task":"BUG-NMH","feedback":"Compat inheritance fix: models herdam compat do provider. Headers pass-through. MiniMax-M2.7 com Accept-Encoding: identity. Prompt testado com sucesso - deltas streaming corretamente.","ts":1778416947}
