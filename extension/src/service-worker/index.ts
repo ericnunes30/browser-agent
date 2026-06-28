@@ -3,18 +3,53 @@
 /* ------------------------------------------------------------------ */
 import { tabGroupManager } from './tab-group';
 import { scheduledTaskManager } from './scheduled-tasks';
-import { getNativeBridge, setCachedActiveTabId, getCachedActiveTabId } from './bridge-singleton';
+import { setCachedActiveTabId, getCachedActiveTabId } from './active-tab';
 import { handleChatSend } from './chat-handler';
 import { handleChatStream } from './chat-stream';
 import { registerMessageRouter } from './message-router';
 
+/* ──── Side panel state tracking ─────────────────────────────────── */
+let isSidePanelOpen = false;
+
 /* ──── Register message router ────────────────────────────────────── */
 registerMessageRouter();
+
+/* ──── Tab group auto-recreate on external destruction ───────────── */
+
+chrome.tabGroups.onRemoved.addListener(async (group) => {
+  if (group.id !== tabGroupManager.getGroupId()) return;
+
+  // Group was destroyed externally. Clear our reference.
+  tabGroupManager.clearGroupId();
+
+  // If we intentionally closed it, do not recreate
+  if (tabGroupManager.isRemovingIntentionally) return;
+
+  // Only recreate if the side panel is open
+  if (!isSidePanelOpen) return;
+
+  // Recreate with the currently active tab in the focused window
+  try {
+    const win = await chrome.windows.getLastFocused();
+    const tabs = await chrome.tabs.query({ active: true, windowId: win.id });
+    const activeTab = tabs[0];
+
+    if (!activeTab?.id) return;
+
+    await tabGroupManager.createGroupWithTab(
+      `BrowserAgent Task - ${new Date().toLocaleString()}`,
+      activeTab.id,
+    );
+    console.log(`[SW] Tab group auto-recreated with tab ${activeTab.id}`);
+  } catch (err) {
+    console.error('[SW] Failed to auto-recreate tab group:', err);
+  }
+});
 
 /* ──── Init ───────────────────────────────────────────────────────── */
 
 chrome.runtime.onInstalled.addListener(async () => { await initialize(); });
-chrome.runtime.onStartup.addListener(async () => { await initialize(); await markPendingSyncIfNeeded(); });
+chrome.runtime.onStartup.addListener(async () => { await initialize(); });
 
 async function initialize() {
   scheduledTaskManager.setCommandHandler(async (command: string) => {
@@ -32,27 +67,6 @@ async function initialize() {
       return `Error: ${err instanceof Error ? err.message : String(err)}`;
     }
   });
-
-  try {
-    const bridge = getNativeBridge();
-    bridge.connect();
-    const stored = await chrome.storage.local.get('ba-session-id');
-    bridge.resumeSession(stored['ba-session-id']);
-  } catch { /* Host not available, continue without session */ }
-}
-
-async function markPendingSyncIfNeeded() {
-  try {
-    const result = await chrome.storage.local.get('ba-last-sync');
-    const lastSync = result['ba-last-sync'] || 0;
-    const url = chrome.runtime.getURL('config/models.custom.json');
-    const resp = await fetch(url, { cache: 'no-cache' });
-    const lastModified = resp.headers.get('Last-Modified');
-    if (lastModified && new Date(lastModified).getTime() > lastSync) {
-      await chrome.storage.local.set({ 'ba-pending-sync': true });
-      console.log('[SW] New models detected since last sync');
-    }
-  } catch { /* Silently ignore — sync check is best-effort */ }
 }
 
 /* ──── Side panel open handler ────────────────────────────────────── */
@@ -158,6 +172,14 @@ chrome.action.onClicked.addListener(async (tab) => {
 /* ──── Port-based streaming (Side Panel) ─────────────────────────── */
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'chat-stream') return;
-  handleChatStream(port);
+  if (port.name === 'chat-stream') {
+    handleChatStream(port);
+    return;
+  }
+  if (port.name === 'side-panel') {
+    isSidePanelOpen = true;
+    port.onDisconnect.addListener(() => {
+      isSidePanelOpen = false;
+    });
+  }
 });

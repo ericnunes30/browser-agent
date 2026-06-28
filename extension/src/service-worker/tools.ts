@@ -1430,6 +1430,39 @@ async function executeEditFile(
   }
 }
 
+/* ─── JavaScript execution tool ───────────────────────────── */
+async function executeJavaScriptTool(input: JavaScriptToolInput): Promise<ToolResult> {
+  try {
+    const result = await chrome.scripting.executeScript({
+      target: { tabId: input.tabId },
+      func: (code: string) => {
+        try {
+          return { success: true, result: eval(code) };
+        } catch (err: any) {
+          return { success: false, error: err.message || String(err) };
+        }
+      },
+      args: [input.code],
+    });
+    const frameResult = result[0]?.result as any;
+    if (frameResult?.success) {
+      return {
+        type: 'tool_result',
+        content: typeof frameResult.result === 'string' ? frameResult.result : JSON.stringify(frameResult.result),
+      };
+    }
+    return {
+      type: 'tool_result',
+      content: `JavaScript error: ${frameResult?.error || 'unknown error'}`,
+    };
+  } catch (err: any) {
+    return {
+      type: 'tool_result',
+      content: `Failed to execute JavaScript: ${err.message || String(err)}`,
+    };
+  }
+}
+
 /* ================================================================== */
 /*  Public API                                                         */
 /* ================================================================== */

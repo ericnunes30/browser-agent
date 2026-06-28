@@ -1,9 +1,8 @@
 /* ─── Message Router — chrome.runtime.onMessage handler ────────── */
+import { ProviderManager } from './provider-manager';
 import { executeTool } from './tools';
 import { tabGroupManager } from './tab-group';
 import { scheduledTaskManager } from './scheduled-tasks';
-import { NativeBridge } from './native-bridge';
-import { getNativeBridge, setPendingModelListResolve, getPendingModelListResolve } from './bridge-singleton';
 import { handleChatSend } from './chat-handler';
 import { handlePermission, forwardToActiveTab } from './permissions-handler';
 
@@ -47,23 +46,51 @@ export function registerMessageRouter() {
         return true;
 
       case 'models:list': {
-        const bridge = getNativeBridge();
-        if (bridge.isHostAvailable) {
-          bridge.connect();
-          bridge.listModels();
-          return new Promise<any>((resolve) => {
-            setPendingModelListResolve(resolve);
-            setTimeout(() => {
-              if (getPendingModelListResolve() === resolve) {
-                setPendingModelListResolve(null);
-                resolve({ providers: [] });
-              }
-            }, 10000);
-          });
-        } else {
-          NativeBridge.loadModelsFallback().then((providers) => sendResponse({ providers }));
-          return true;
-        }
+        console.log('[SW] models:list requested');
+        (async () => {
+          try {
+            const manager = ProviderManager.getInstance();
+            const result = await manager.listModels();
+            const active = await manager.getActiveProvider();
+
+            if (!result.ok) {
+              sendResponse({ providers: [], error: result.error });
+              return;
+            }
+
+            console.log('[SW] models:list raw models count:', result.models.length);
+            console.log('[SW] models:list raw model IDs:', result.models.map((m) => `${m.providerId}/${m.id}`));
+
+            const grouped = new Map<string, { id: string; name: string; models: string[] }>();
+            for (const model of result.models) {
+              const entry = grouped.get(model.providerId) ?? {
+                id: model.providerId,
+                name: model.providerLabel,
+                models: [],
+              };
+              entry.models.push(model.id);
+              grouped.set(model.providerId, entry);
+            }
+
+            const providers = Array.from(grouped.values());
+            console.log('[SW] models:list grouped providers count:', providers.length);
+            for (const p of providers) {
+              console.log(`[SW] models:list provider "${p.name}" (${p.id}): ${p.models.length} model(s):`, p.models);
+            }
+
+            sendResponse({
+              providers,
+              activeProviderId: active?.id,
+              activeModel:
+                active && 'defaultModel' in active ? active.defaultModel : undefined,
+            });
+          } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            console.error('[SW] models:list error:', errMsg);
+            sendResponse({ providers: [], error: errMsg });
+          }
+        })();
+        return true;
       }
 
       case 'SHOW_AGENT_INDICATORS':

@@ -10,7 +10,7 @@
     "install:host": "node dist/install.js"
   },
   "dependencies": {
-    "@mariozechner/pi-coding-agent": "latest",
+    "@earendil-works/pi-coding-agent": "latest",
     "@sinclair/typebox": "^0.34.0"
   },
   "devDependencies": {
