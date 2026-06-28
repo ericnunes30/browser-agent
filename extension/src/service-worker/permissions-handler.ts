@@ -1,6 +1,6 @@
 /* ─── Permission & shield helpers ──────────────────────────────── */
 import { permissionManager } from './permissions';
-import { getActiveTabId } from './bridge-singleton';
+import { getActiveTabId } from './active-tab';
 
 export async function handlePermission(msg: any, sender?: chrome.runtime.MessageSender): Promise<any> {
   const tabId = sender?.tab?.id || msg.tabId;

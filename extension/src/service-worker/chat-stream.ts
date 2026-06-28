@@ -1,27 +1,44 @@
 /* ─── Port-based streaming (Side Panel ↔ Service Worker) ──────── */
-import type { NativeBridgeCallbacks } from './native-bridge';
-import { executeTool } from './tools';
-import { directChat } from './chat-handler';
-import { getCachedActiveTabId, setCachedActiveTabId, getActiveTabId, getNativeBridge } from './bridge-singleton';
+import { sendChatPrompt, getAdapterTools } from './chat-handler';
+import {
+  getCachedActiveTabId,
+  setCachedActiveTabId,
+  getActiveTabId,
+} from './active-tab';
 import { startKeepAlive, stopKeepAlive } from './keep-alive';
+import type { PromptParams } from './providers/adapter';
+
+/**
+ * Convert the simplified side-panel message history into the adapter's
+ * ChatMessage format.
+ */
+function convertMessages(
+  messages: Array<{
+    role: string;
+    content: string;
+    tool_call_id?: string;
+    name?: string;
+  }>,
+): PromptParams['messages'] {
+  return messages.map((m) => ({
+    role: m.role as PromptParams['messages'][number]['role'],
+    content: m.content,
+    ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
+    ...(m.name ? { name: m.name } : {}),
+  }));
+}
 
 /**
  * Handle a chat-stream port connection from the side panel.
- * Reuses the singleton NativeBridge with temporarily overridden callbacks.
+ * Routes every prompt through ProviderManager so the active configured
+ * adapter handles the stream.
  */
 export async function handleChatStream(port: chrome.runtime.Port) {
-  let singletonBridge: ReturnType<typeof getNativeBridge> | null = null;
-  let originalCallbacks: NativeBridgeCallbacks | null = null;
   let disposed = false;
 
   const dispose = () => {
     if (disposed) return;
     disposed = true;
-    // Restore original callbacks if we overrode them
-    if (originalCallbacks && singletonBridge) {
-      singletonBridge.setCallbacks(originalCallbacks);
-      originalCallbacks = null;
-    }
     stopKeepAlive();
   };
 
@@ -41,94 +58,88 @@ export async function handleChatStream(port: chrome.runtime.Port) {
           break;
         }
 
-        const streamTabId = msg.tabId ?? getCachedActiveTabId() ?? await getActiveTabId();
+        const streamTabId = msg.tabId ?? getCachedActiveTabId() ?? (await getActiveTabId());
         setCachedActiveTabId(streamTabId);
 
-        singletonBridge = getNativeBridge();
-        const hostAvailable = singletonBridge.isHostAvailable;
-        console.log(`[SW] 📨 chat:send processing (hostAvailable: ${hostAvailable}, promptText: "${promptText.substring(0, 50)}")`);
+        const params: PromptParams = {
+          model: msg.model || '',
+          messages: convertMessages(msg.messages || []),
+          tools: getAdapterTools(),
+          stream: true,
+        };
 
-        if (hostAvailable) {
-          // ── PATH A: Reuse singleton bridge with stream callbacks ──
-          originalCallbacks = singletonBridge.getCallbacks();
-
-          let firstDelta = true;
-          const streamCallbacks: NativeBridgeCallbacks = {
-            onDelta: (text: string) => {
-              if (firstDelta) { firstDelta = false; console.log('[SW] <<< First response chunk received'); }
-              if (!disposed) port.postMessage({ type: 'chat:delta', text });
+        try {
+          await sendChatPrompt(
+            params,
+            {
+              onTextDelta: (text: string) => {
+                if (!disposed) port.postMessage({ type: 'chat:delta', text });
+              },
+              onReasoningDelta: (text: string) => {
+                if (!disposed) port.postMessage({ type: 'chat:reasoning', text });
+              },
+              onToolStart: (toolCallId: string, name: string) => {
+                console.log(`[SW] 🔧 Tool start: ${name} (id: ${toolCallId})`);
+                if (streamTabId) {
+                  chrome.tabs
+                    .sendMessage(streamTabId, { type: 'indicator:show' })
+                    .catch(() => {});
+                  chrome.tabs
+                    .sendMessage(streamTabId, {
+                      type: 'indicator:action',
+                      action: name,
+                      text: `Performing ${name}`,
+                    })
+                    .catch(() => {});
+                }
+                if (!disposed) port.postMessage({ type: 'chat:toolStart', name });
+              },
+              onToolEnd: (name: string, result?: any, error?: string) => {
+                console.log(`[SW] 🔧 Tool end: ${name} (error: ${error || ''})`);
+                if (streamTabId) {
+                  chrome.tabs
+                    .sendMessage(streamTabId, { type: 'indicator:hide_action' })
+                    .catch(() => {});
+                }
+                if (!disposed) port.postMessage({ type: 'chat:toolEnd', name, result, error });
+              },
+              onError: (err: string) => {
+                console.error('[SW] ❌ Stream error:', err);
+                if (!disposed) port.postMessage({ type: 'chat:error', error: err });
+                dispose();
+              },
+              onDone: () => {
+                console.log('[SW] ✅ Stream done');
+                if (!disposed) port.postMessage({ type: 'chat:result' });
+                dispose();
+              },
             },
-            onReasoning: (text: string) => {
-              if (!disposed) port.postMessage({ type: 'chat:reasoning', text });
+            streamTabId ?? undefined,
+            // onContinuePrompt: ask user via port
+            async (): Promise<boolean> => {
+              if (disposed) return false;
+              port.postMessage({ type: 'chat:continuePrompt' });
+              return new Promise<boolean>((resolve) => {
+                const handler = (msg: any) => {
+                  if (msg.type === 'chat:continueResponse') {
+                    port.onMessage.removeListener(handler);
+                    resolve(msg.continue === true);
+                  }
+                };
+                port.onMessage.addListener(handler);
+              });
             },
-            onToolExec: async (toolCallId: string, name: string, args: Record<string, unknown>) => {
-              console.log(`[SW] 🔧 Tool exec: ${name} (id: ${toolCallId})`);
-              const toolStart = Date.now();
-              if (streamTabId) {
-                chrome.tabs.sendMessage(streamTabId, { type: 'indicator:show' }).catch(() => {});
-                chrome.tabs.sendMessage(streamTabId, { type: 'indicator:action', action: name, text: `Performing ${name}` }).catch(() => {});
-              }
-              const result = await executeTool(name, args, streamTabId ?? undefined);
-              console.log(`[SW] 🔧 Tool done: ${name} (${Date.now() - toolStart}ms)${result.error ? ' ERROR: ' + result.error : ''}`);
-              if (streamTabId) {
-                chrome.tabs.sendMessage(streamTabId, { type: 'indicator:hide_action' }).catch(() => {});
-              }
-              const images = result.images || result.screenshots?.map(s => s.data) || [];
-              return { content: result.content, error: result.error, images };
-            },
-            onToolEnd: (name: string, result: string, error?: boolean) => {
-              console.log(`[SW] 🔧 Tool end: ${name} (error: ${!!error})`);
-              if (!disposed) port.postMessage({ type: 'chat:toolEnd', name, result, error });
-              if (streamTabId) chrome.tabs.sendMessage(streamTabId, { type: 'indicator:hide_action' }).catch(() => {});
-            },
-            onTurnEnd: () => {},
-            onDone: () => {
-              console.log('[SW] ✅ Stream done');
-              if (!disposed) port.postMessage({ type: 'chat:result' });
-              dispose();
-            },
-            onError: (err: string) => {
-              console.error('[SW] ❌ Stream error:', err);
-              if (!disposed) port.postMessage({ type: 'chat:error', error: err });
-              dispose();
-            },
-            onModelList: () => {},
-            onSessionInfo: (sessionId: string) => {
-              chrome.storage.local.set({ 'ba-session-id': sessionId }).catch(() => {});
-            },
-          };
-
-          singletonBridge.setCallbacks(streamCallbacks);
-
-          if (msg.provider && msg.model) {
-            singletonBridge.setModel(msg.provider, msg.model);
-          }
-
-          console.log(`[SW] >>> Sending prompt (${promptText.length} chars) to native host`);
-          console.log(`[SW] >>> Sending prompt (${promptText.length} chars) to native host (second? ${singletonBridge.getCallbacks() !== originalCallbacks})`);
-          singletonBridge.prompt(promptText);
-        } else {
-          // ── PATH B: Direct API fallback (no tools) ──
-          try {
-            const result = await directChat(msg.provider || 'openai', msg.model || 'gpt-4o', msg.messages || []);
-            if (!disposed) {
-              if (result.content) port.postMessage({ type: 'chat:delta', text: result.content });
-              if (result.reasoning) port.postMessage({ type: 'chat:reasoning', text: result.reasoning });
-              port.postMessage({ type: 'chat:result' });
-            }
-          } catch (err: unknown) {
-            const errMsg = err instanceof Error ? err.message : String(err);
-            console.error('[SW] Chat stream directChat error:', errMsg);
-            if (!disposed) port.postMessage({ type: 'chat:error', error: errMsg });
-          } finally {
-            dispose();
-          }
+          );
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error('[SW] Chat stream error:', errMsg);
+          if (!disposed) port.postMessage({ type: 'chat:error', error: errMsg });
+          dispose();
         }
         break;
       }
 
       case 'chat:stop': {
-        singletonBridge?.abort();
         dispose();
         break;
       }

@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
@@ -11,7 +10,7 @@ import {
   SessionManager,
   SettingsManager,
   type AgentSession,
-} from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
 import { createBrowserTools, type ToolExecCallback } from "./browser-tools.js";
 import type { HostEvent, ThinkingLevel } from "./protocol.js";
 
@@ -61,9 +60,9 @@ export class PiSDKHost {
 
   /** Initialize the host (AuthStorage/ModelRegistry already set up in ctor). */
   async init(): Promise<void> {
-    this.loadCustomProviders(); // ← ADD THIS LINE
-    // AuthStorage and ModelRegistry are created in constructor
-    // Session is created lazily on first prompt
+    // Models come exclusively from ~/.pi/agent/models.json via the pi SDK
+    // ModelRegistry — no packaged config fallback. This is intentional and
+    // documented in the architecture decisions.
   }
 
   /** Send a prompt to the agent. */
@@ -343,70 +342,10 @@ export class PiSDKHost {
     });
   }
 
-  private static readonly CUSTOM_PROVIDERS_PATH = "../config/providers.custom.json";
-
-  private loadCustomProviders(): void {
-    try {
-      const configPath = path.resolve(__dirname, PiSDKHost.CUSTOM_PROVIDERS_PATH);
-      if (!fs.existsSync(configPath)) {
-        console.warn("[PiSDKHost] Custom providers file not found:", configPath);
-        return;
-      }
-      const raw = fs.readFileSync(configPath, "utf-8");
-      const data = JSON.parse(raw);
-      const providers = data.providers;
-      if (!providers || typeof providers !== "object") {
-        console.warn("[PiSDKHost] Invalid custom providers format");
-        return;
-      }
-
-      for (const [name, config] of Object.entries(providers)) {
-        const providerConfig = config as any;
-
-        // 1. Set API key in AuthStorage so getAvailable() returns these models
-        if (providerConfig.apiKey) {
-          (this.authStorage as any).set(name, {
-            type: "api_key",
-            key: providerConfig.apiKey,
-          });
-        }
-
-        // 2. Register provider with ModelRegistry
-        this.modelRegistry.registerProvider(name, {
-          name: providerConfig.name || name,
-          baseUrl: providerConfig.baseUrl,
-          api: providerConfig.api,
-          apiKey: providerConfig.apiKey,
-          authHeader: providerConfig.authHeader,
-          models:
-            providerConfig.models?.map((m: any) => ({
-              id: m.id,
-              name: m.name || m.id,
-              api: m.api,
-              baseUrl: m.baseUrl,
-              reasoning: m.reasoning ?? false,
-              input: m.input ?? ["text"],
-              cost: m.cost ?? {
-                input: 0,
-                output: 0,
-                cacheRead: 0,
-                cacheWrite: 0,
-              },
-              contextWindow: m.contextWindow ?? 4096,
-              maxTokens: m.maxTokens ?? 4096,
-              // Inherit provider-level compat if model doesn't specify its own
-              compat: m.compat ?? providerConfig.compat,
-              headers: m.headers,
-            })) || [],
-        });
-
-        console.error(`[PiSDKHost] Registered custom provider: ${name}`);
-      }
-    } catch (err) {
-      console.error(
-        "[PiSDKHost] Failed to load custom providers:",
-        err instanceof Error ? err.message : String(err),
-      );
-    }
-  }
+  /**
+   * Old custom provider loader — removed. Models now come exclusively from
+   * ~/.pi/agent/models.json via the pi SDK ModelRegistry. The bundled
+   * providers.custom.json was a fallback that masked user-edited model
+   * definitions; removing it ensures there's a single source of truth.
+   */
 }

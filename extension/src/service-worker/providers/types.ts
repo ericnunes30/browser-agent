@@ -187,3 +187,70 @@ export interface EditFileInput {
   oldText: string;
   newText: string;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Provider endpoint configuration types                             */
+/* ------------------------------------------------------------------ */
+
+export type ProviderType =
+  | 'ollama'
+  | 'openai'
+  | 'anthropic'
+  | 'openai-compatible';
+
+export type AuthType =
+  | 'bearer'
+  | 'x-api-key'
+  | 'custom-header'
+  | 'none';
+
+export interface ProviderEndpoint {
+  id: string;
+  type: ProviderType;
+  label: string;
+  baseUrl: string;
+  authType: AuthType;
+  authHeaderName?: string;
+  apiKey: string; // obfuscated in storage
+  enabled: boolean;
+  modelsSource: 'auto' | 'manual';
+  manualModels?: string[];
+  defaultModel?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface StoredProviderConfig {
+  version: 1;
+  activeProviderId?: string;
+  providers: ProviderEndpoint[];
+}
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  providerId: string;
+  providerLabel: string;
+  capabilities: {
+    vision: boolean;
+    tools: boolean;
+    streaming: boolean;
+    maxTokens?: number;
+    contextWindow?: number;
+  };
+}
+
+export interface CustomModelEntry {
+  id: string;             // unique entry id
+  providerId: string;     // which provider this model belongs to
+  modelId: string;        // the model id sent to the API
+  name?: string;          // display name (optional, defaults to modelId)
+  capabilities?: {
+    vision?: boolean;
+    tools?: boolean;
+    streaming?: boolean;
+  };
+  createdAt: number;
+}
+
+export const CUSTOM_MODELS_STORAGE_KEY = 'ba-custom-models';

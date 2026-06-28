@@ -10,7 +10,29 @@
 
 ## Próximo Marco
 
-### M6: Pi SDK Migration (P1-P4)
+### M7: Provider Endpoints Configuration (E1–E9) ✅ DONE
+**Goal:** Permitir que a extensão funcione sem native host, conectando-se diretamente a endpoints OpenAI, Anthropic e Ollama Cloud configurados na página de opções.
+
+| Feature | Tasks | Priority | Status |
+|---------|-------|----------|--------|
+| **E1: Provider Config Types & Storage** | T1-T3 | 🔴 Alta | done |
+| **E2: Adapter Pattern — Interfaces e Helpers** | T4-T5 | 🔴 Alta | done |
+| **E3: OpenAI Adapter** | T6 | 🔴 Alta | done |
+| **E4: Anthropic Adapter** | T7 | 🔴 Alta | done |
+| **E5: Ollama Adapter + Factory** | T8-T9 | 🟡 Média | done |
+| **E6: Provider Manager + Native Host Optional** | T10-T11 | 🔴 Alta | done |
+| **E7: Options Page UI** | T12-T14 | 🔴 Alta | done |
+| **E8: Chat Integration** | T15-T16 | 🟡 Média | done |
+| **E9: Tests & Validation** | T17-T19 | 🟡 Média | done |
+
+---
+
+## Próximo Marco (a definir)
+
+- Candidatos: **MCP Bridge**, **Per-session Model Override**, **UI/UX refinements**.
+- Nenhum marco formal iniciado; aguardando priorização.
+
+### M6: Pi SDK Migration (P1-P4) ✅ DONE
 **Goal:** Substituir provider customizado pelo Pi SDK via Native Messaging Host.
 
 | Feature | Tasks | Priority | Status |
@@ -73,7 +95,8 @@ T1 (Scaffold Host)
 
 | Feature | Prioridade | Depende de |
 |---------|-----------|------------|
-| Pi SDK Migration | 🔴 Alta | — |
+| Provider Endpoints Configuration | ✅ done | M7 concluído em 2026-06-25 |
+| Pi SDK Migration | ✅ done | — |
 | MCP Bridge | 🟢 Baixa | Pi SDK Migration |
 | Per-session Model Override | 🟢 Baixa | Pi SDK Migration |
 | Session Fork/Clone | 🟢 Baixa | Pi SDK Migration |

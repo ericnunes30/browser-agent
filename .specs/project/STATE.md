@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-🟢 **Specify Complete** — Todos os artefatos criados. Pronto para implementação.
+✅ **M7 Completed — Provider Endpoints Configuration**
 
-## Current Phase
+M7 foi concluído em 2026-06-25. A extensão agora funciona sem native host obrigatório, conectando-se a endpoints OpenAI, Anthropic e Ollama configurados na options page. O native host permanece disponível como fonte explícita e opcional, conforme D13.
 
-🟢 **Pi SDK Migration** — Todas as 16 tarefas concluídas. Extensão agora usa Pi SDK via Native Messaging Host.
+Próximo passo: definir e iniciar o próximo marco (candidatos: MCP Bridge, per-session model override, refinos de UI/UX).
 
 ## Decisions
 
@@ -17,19 +17,19 @@
 | D03 | ~~Modelos carregados de JSON~~ → **ModelRegistry do Pi SDK** ✅ IMPLEMENTED | SDK lê `~/.pi/agent/models.json` + `auth.json` automaticamente. Zero config. | 2026-05-09 |
 | D04 | MCP apenas placeholder nesta versão | Foco na extensão primeiro, MCP depois | 2026-05-07 |
 | D05 | Zero dependências de runtime no content script | Minimiza impacto nas páginas, evita conflitos | 2026-05-07 |
-| D06 | Permissões em chrome.storage.local | Persistência nativa | 2026-05-07 |
+| D-PE-01 | **Adapter Pattern** para provider endpoints (OpenAI/Anthropic/Ollama) com helpers compartilhados por composição, **não Template Method** | Provedores têm protocolos muito diferentes; herança rígida prejudicaria evolução | 2026-06-25 |
+| D-PE-02 | **No fallback automático**: endpoints configuráveis são a fonte primária; native host continua como opção explícita, não como fallback automático de conexão | Garante comportamento previsível e evita troca silenciosa de provider | 2026-06-25 |
 | D07 | Sem framework de teste formal | Teste manual estruturado (3 níveis) | 2026-05-07 |
 | D08 | Spec-Driven Development (4 fases) | Metodologia estruturada | 2026-05-07 |
 | D09 | **BrowserAgent mantém**: UI, content scripts, tab groups, permissões, indicadores ✅ IMPLEMENTED | Separação clara: extensão = browser, SDK = agent/provider | 2026-05-09 |
 | D10 | **Pi SDK assume**: provider/model discovery, auth, API streaming, tool protocol, session ✅ IMPLEMENTED | SDK já tem suporte a 20+ providers, compat flags, etc. | 2026-05-09 |
 | D11 | **Native Messaging Host** como bridge entre SW (Chrome) e Pi SDK (Node.js) ✅ IMPLEMENTED | Única forma de rodar SDK Node.js a partir de extensão MV3 | 2026-05-09 |
 | D12 | **Fallback**: Se Native Messaging não disponível, manter API direta como fallback | Garantir funcionamento básico sem host instalado | 2026-05-09 |
+| D13 | **Provider Endpoints Configuráveis**: substituir native host obrigatório por endpoints OpenAI/Anthropic/Ollama configurados na options page; native host vira plano B | Viabiliza publicação na Chrome Web Store e uso por não-desenvolvedores | 2026-06-25 |
 
 ## Blockers
 
-*Nenhum no momento.*
-
-- Host precisa ser instalado via script de instalação (`npm run install:host`)
+- Nenhum blocker ativo. M7 concluído; próximo marco ainda a ser definido.
 
 ## Learnings
 
