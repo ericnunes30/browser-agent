@@ -28,6 +28,7 @@ interface TabGroupInfo {
 export class TabGroupManager {
   private currentGroupId: number | null = null;
   private groupName: string = '';
+  private isIntentionallyClosing = false;
   private readonly GROUP_COLORS: chrome.tabGroups.ColorEnum[] = [
     'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange', 'grey',
   ];
@@ -187,20 +188,43 @@ export class TabGroupManager {
   }
 
   /**
+   * Get whether the group is currently being closed intentionally by the extension.
+   */
+  get isRemovingIntentionally(): boolean {
+    return this.isIntentionallyClosing;
+  }
+
+  /**
+   * Clear the current group ID without closing tabs.
+   * Called externally when the group is destroyed by the browser/user.
+   */
+  clearGroupId(): void {
+    this.currentGroupId = null;
+    this.groupName = '';
+  }
+
+  /**
    * Close all tabs in the group and remove the group.
    */
   async closeGroup(): Promise<void> {
     if (this.currentGroupId === null) return;
-    
-    const tabs = await chrome.tabs.query({ groupId: this.currentGroupId });
-    const tabIds = tabs.map(t => t.id!).filter(Boolean);
-    
-    if (tabIds.length > 0) {
-      await chrome.tabs.remove(tabIds);
+
+    this.isIntentionallyClosing = true;
+    try {
+      const tabs = await chrome.tabs.query({ groupId: this.currentGroupId });
+      const tabIds = tabs.map(t => t.id!).filter(Boolean);
+
+      if (tabIds.length > 0) {
+        await chrome.tabs.remove(tabIds);
+      }
+    } finally {
+      this.currentGroupId = null;
+      this.groupName = '';
+      // Allow any onRemoved handlers to read the flag before clearing it
+      setTimeout(() => {
+        this.isIntentionallyClosing = false;
+      }, 0);
     }
-    
-    this.currentGroupId = null;
-    this.groupName = '';
   }
 
   /**

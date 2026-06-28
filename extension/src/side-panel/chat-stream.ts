@@ -15,10 +15,12 @@ export interface StreamCallbacks {
   onToolEnd: (name: string) => void;
   onDone: (content: string, reasoning?: string) => void;
   onError: (error: string) => void;
+  onContinuePrompt?: () => void;
 }
 
 export class ChatStream {
   private port: chrome.runtime.Port | null = null;
+  private _callbacks: StreamCallbacks | null = null;
 
   start(
     provider: string,
@@ -28,6 +30,7 @@ export class ChatStream {
     callbacks: StreamCallbacks,
   ): void {
     console.log('[ChatStream] start() called, connecting...');
+    this._callbacks = callbacks;
     try {
       this.port = chrome.runtime.connect({ name: 'chat-stream' });
       console.log('[ChatStream] port connected:', !!this.port);
@@ -69,6 +72,10 @@ export class ChatStream {
           callbacks.onToolEnd(msg.name);
           break;
 
+        case 'chat:continuePrompt':
+          callbacks.onContinuePrompt?.();
+          break;
+
         case 'chat:result':
           callbacks.onDone(accumulatedText, accumulatedReasoning || undefined);
           this.cleanup();
@@ -91,6 +98,13 @@ export class ChatStream {
     });
   }
 
+  /** Respond to a continue prompt from the service worker. */
+  respondContinue(shouldContinue: boolean): void {
+    if (this.port) {
+      this.port.postMessage({ type: 'chat:continueResponse', continue: shouldContinue });
+    }
+  }
+
   stop(): void {
     if (this.port) {
       this.port.postMessage({ type: 'chat:stop' });
@@ -103,5 +117,6 @@ export class ChatStream {
       this.port.disconnect();
       this.port = null;
     }
+    this._callbacks = null;
   }
 }

@@ -4,7 +4,7 @@
 /*  Each tool wraps an execTool() callback that sends a toolExec       */
 /*  message to the Service Worker and awaits a toolResult reply.       */
 /* ------------------------------------------------------------------ */
-import { defineTool } from '@mariozechner/pi-coding-agent';
+import { defineTool } from '@earendil-works/pi-coding-agent';
 import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
 
