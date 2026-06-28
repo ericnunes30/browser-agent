@@ -1,7 +1,9 @@
 {
   "name": "com.pi.browseragent",
-  "description": "Pi SDK Bridge for BrowserAgent - 19 browser tools",
-  "path": "G:\\novosApps\\pi-softwares-ideias\\browserAgent\\native-host\\dist\\run-host.bat",
+  "description": "Pi SDK Bridge for BrowserAgent (reads ~/.pi/agent/models.json)",
+  "path": "G:\\novosApps\\browser-agent\\native-host\\dist\\run-host.bat",
   "type": "stdio",
-  "allowed_origins": ["chrome-extension://fmgomnhkeldodgkflgkkgbcnmochajco/"]
+  "allowed_origins": [
+    "chrome-extension://XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/"
+  ]
 }

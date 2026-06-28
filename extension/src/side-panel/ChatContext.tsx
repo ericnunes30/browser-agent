@@ -35,6 +35,8 @@ interface ChatContextValue {
   hasNewModels: boolean;
   reloadModels: () => Promise<void>;
   providers: Array<{ id: string; name: string; models: string[] }>;
+  showContinuePrompt: boolean;
+  respondContinue: (shouldContinue: boolean) => void;
 }
 
 const ChatCtx = createContext<ChatContextValue>(null!);
@@ -47,31 +49,32 @@ function nextId() { return `msg_${Date.now()}_${++msgCounter}`; }
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [activeProvider, setActiveProvider] = useState('openai');
-  const [activeModel, setActiveModel] = useState('gpt-4o');
+  const [activeProvider, setActiveProvider] = useState('');
+  const [activeModel, setActiveModel] = useState('');
   const [permissionMode, setPermissionMode] = useState<PermissionMode>('follow_a_plan');
   const [pendingPermission, setPendingPermission] = useState<PermissionRequest | null>(null);
   const [hasNewModels, setHasNewModels] = useState(false);
   const [providers, setProviders] = useState<Array<{ id: string; name: string; models: string[] }>>([]);
+  const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const messagesRef = useRef<DisplayMessage[]>([]);
   const chatStreamRef = useRef<ChatStream | null>(null);
 
   // Load provider/model from storage on mount
   useEffect(() => {
-    chrome.storage.local.get(['ba-providers', 'ba-permission-mode'], (result) => {
-      const ba = result['ba-providers'] as Record<string, { selectedModel?: string }> | undefined;
-      if (ba) {
-        const entries = Object.entries(ba);
-        if (entries.length > 0) {
-          const [id, cfg] = entries[0];
-          setActiveProvider(id);
-          if (cfg.selectedModel) setActiveModel(cfg.selectedModel);
+    chrome.storage.local.get(
+      ['ba-active-provider', 'ba-selected-model', 'ba-default-model', 'ba-permission-mode'],
+      (result) => {
+        if (result['ba-active-provider']) {
+          setActiveProvider(result['ba-active-provider'] as string);
         }
-      }
-      if (result['ba-permission-mode']) {
-        setPermissionMode(result['ba-permission-mode']);
-      }
-    });
+        if (result['ba-selected-model']) {
+          setActiveModel(result['ba-selected-model'] as string);
+        }
+        if (result['ba-permission-mode']) {
+          setPermissionMode(result['ba-permission-mode']);
+        }
+      },
+    );
   }, []);
 
   // Listen for permission requests from service worker
@@ -117,40 +120,71 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const loadProvidersList = useCallback(async () => {
+    try {
+      const resp = await chrome.runtime.sendMessage({
+        type: 'models:list',
+      });
+      console.log('[ChatContext] models:list raw response:', resp);
+      if (!resp?.providers) return;
+
+      const newProviders: Array<{ id: string; name: string; models: string[] }> =
+        resp.providers.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          models: (p.models || []).map((m: any) => m.id || m.name || String(m)),
+        }));
+      console.log('[ChatContext] transformed providers:', newProviders);
+      setProviders(newProviders);
+
+      const stored = await chrome.storage.local.get([
+        'ba-active-provider',
+        'ba-selected-model',
+        'ba-default-model',
+      ]);
+      const savedProvider = stored['ba-active-provider'] as string | undefined;
+      const savedModel = stored['ba-selected-model'] as string | undefined;
+      const defaultModel = stored['ba-default-model'] as string | undefined;
+
+      setActiveProvider((prev) => {
+        if (prev) return prev;
+        if (savedProvider) return savedProvider;
+        if (defaultModel) {
+          const provider = newProviders.find((p) => p.models.includes(defaultModel));
+          if (provider) return provider.id;
+        }
+        return resp.activeProviderId || '';
+      });
+
+      setActiveModel((prev) => {
+        if (prev) return prev;
+        if (savedModel) return savedModel;
+        if (defaultModel) {
+          const exists = newProviders.some((p) => p.models.includes(defaultModel));
+          if (exists) return defaultModel;
+        }
+        return resp.activeModel || '';
+      });
+    } catch {
+      // Best-effort refresh.
+    }
+  }, []);
+
   const checkForNewModels = useCallback(async () => {
-    // Models are managed by native host — no config-based sync needed.
-    // Refresh the providers list from the host instead.
     try {
       await loadProvidersList();
       setHasNewModels(false);
     } catch {
       setHasNewModels(false);
     }
-  }, []);
+  }, [loadProvidersList]);
 
   const reloadModels = useCallback(async () => {
     try {
-      // Request fresh model list from native host via the SW
       await loadProvidersList();
       setHasNewModels(false);
     } catch {}
-  }, []);
-
-  async function loadProvidersList() {
-    try {
-      // Uses NativeBridge internally via the SW handler
-      const resp = await chrome.runtime.sendMessage({ type: 'models:list' });
-      if (resp?.providers) {
-        setProviders(
-          resp.providers.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            models: (p.models || []).map((m: any) => m.id || m.name || String(m)),
-          })),
-        );
-      }
-    } catch {}
-  }
+  }, [loadProvidersList]);
 
   // Check for new models on mount
   useEffect(() => {
@@ -166,7 +200,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Load providers list on mount
   useEffect(() => {
     loadProvidersList();
-  }, []);
+  }, [loadProvidersList]);
+
+  // Reload providers when the options page changes configuration.
+  useEffect(() => {
+    const handler = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string,
+    ) => {
+      if (areaName !== 'local') return;
+      if (changes['ba-active-provider']) {
+        setActiveProvider(changes['ba-active-provider'].newValue || '');
+      }
+      if (changes['ba-provider-config'] || changes['ba-active-provider'] || changes['ba-custom-models']) {
+        loadProvidersList();
+      }
+    };
+    chrome.storage.onChanged.addListener(handler);
+    return () => chrome.storage.onChanged.removeListener(handler);
+  }, [loadProvidersList]);
 
   const clearConversation = useCallback(() => {
     setMessages([]);
@@ -176,6 +228,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const setProvider = useCallback((id: string, model: string) => {
     setActiveProvider(id);
     setActiveModel(model);
+    chrome.storage.local.set({ 'ba-active-provider': id, 'ba-selected-model': model });
   }, []);
 
   const handleSetPermissionMode = useCallback((mode: PermissionMode) => {
@@ -214,6 +267,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         messagesRef.current = updated;
         return updated;
       });
+
+      if (!activeProvider || !activeModel) {
+        updateMessage(assistantMsg.id, 'No provider/model selected. Open options.');
+        setIsStreaming(false);
+        return;
+      }
 
       // Get active tab
       let activeTabId: number | null = null;
@@ -271,6 +330,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         onToolEnd: (_name: string) => {
           // No action needed for basic streaming
         },
+        onContinuePrompt: () => {
+          setShowContinuePrompt(true);
+        },
         onDone: (content: string, reasoning?: string) => {
           updateMessage(assistantMsg.id, content, reasoning);
           setIsStreaming(false);
@@ -315,6 +377,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const respondContinue = useCallback((shouldContinue: boolean) => {
+    setShowContinuePrompt(false);
+    chatStreamRef.current?.respondContinue(shouldContinue);
+  }, []);
+
   return (
     <ChatCtx.Provider
       value={{
@@ -323,6 +390,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         clearConversation,
         isStreaming,
         stopGeneration,
+        respondContinue,
+        showContinuePrompt,
         activeProvider,
         activeModel,
         setProvider,
