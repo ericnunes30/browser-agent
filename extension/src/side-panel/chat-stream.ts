@@ -11,8 +11,8 @@
 export interface StreamCallbacks {
   onDelta: (text: string) => void;
   onReasoning: (text: string) => void;
-  onToolStart: (name: string) => void;
-  onToolEnd: (name: string) => void;
+  onToolStart: (name: string, args?: Record<string, unknown>) => void;
+  onToolEnd: (name: string, result?: string, error?: string) => void;
   onDone: (content: string, reasoning?: string) => void;
   onError: (error: string) => void;
   onContinuePrompt?: () => void;
@@ -65,11 +65,11 @@ export class ChatStream {
           break;
 
         case 'chat:toolStart':
-          callbacks.onToolStart(msg.name);
+          callbacks.onToolStart(msg.name, msg.args);
           break;
 
         case 'chat:toolEnd':
-          callbacks.onToolEnd(msg.name);
+          callbacks.onToolEnd(msg.name, msg.result, msg.error);
           break;
 
         case 'chat:continuePrompt':

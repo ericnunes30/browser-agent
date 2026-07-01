@@ -9,23 +9,28 @@ import { startKeepAlive, stopKeepAlive } from './keep-alive';
 import type { PromptParams } from './providers/adapter';
 
 /**
- * Convert the simplified side-panel message history into the adapter's
- * ChatMessage format.
+ * Convert the side-panel message history into the adapter's ChatMessage format.
+ * Supports both string content and ContentPart arrays (for images).
  */
 function convertMessages(
   messages: Array<{
     role: string;
-    content: string;
+    content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
     tool_call_id?: string;
     name?: string;
   }>,
 ): PromptParams['messages'] {
-  return messages.map((m) => ({
-    role: m.role as PromptParams['messages'][number]['role'],
-    content: m.content,
-    ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
-    ...(m.name ? { name: m.name } : {}),
-  }));
+  return messages.map((m) => {
+    // Content is already in the right format (string or ContentPart array)
+    const content = m.content;
+    const result: any = {
+      role: m.role as PromptParams['messages'][number]['role'],
+      content,
+    };
+    if (m.tool_call_id) result.tool_call_id = m.tool_call_id;
+    if (m.name) result.name = m.name;
+    return result;
+  });
 }
 
 /**
@@ -51,8 +56,19 @@ export async function handleChatStream(port: chrome.runtime.Port) {
         console.log(`[SW] 📨 chat:send received (messages: ${msg.messages?.length})`);
 
         const lastMsg = msg.messages?.[msg.messages?.length - 1];
-        const promptText = typeof lastMsg?.content === 'string' ? lastMsg.content : '';
-        if (!promptText) {
+        // Extract text from last message (string or ContentPart array)
+        let promptText = '';
+        let hasImages = false;
+        if (typeof lastMsg?.content === 'string') {
+          promptText = lastMsg.content;
+        } else if (Array.isArray(lastMsg?.content)) {
+          for (const part of lastMsg.content) {
+            if (part.type === 'text') promptText += part.text ?? '';
+            if (part.type === 'image_url') hasImages = true;
+          }
+        }
+        // Allow empty text if there are images attached
+        if (!promptText && !hasImages) {
           if (!disposed) port.postMessage({ type: 'chat:error', error: 'No message content' });
           dispose();
           break;
@@ -78,7 +94,7 @@ export async function handleChatStream(port: chrome.runtime.Port) {
               onReasoningDelta: (text: string) => {
                 if (!disposed) port.postMessage({ type: 'chat:reasoning', text });
               },
-              onToolStart: (toolCallId: string, name: string) => {
+              onToolStart: (toolCallId: string, name: string, args?: unknown) => {
                 console.log(`[SW] 🔧 Tool start: ${name} (id: ${toolCallId})`);
                 if (streamTabId) {
                   chrome.tabs
@@ -92,7 +108,7 @@ export async function handleChatStream(port: chrome.runtime.Port) {
                     })
                     .catch(() => {});
                 }
-                if (!disposed) port.postMessage({ type: 'chat:toolStart', name });
+                if (!disposed) port.postMessage({ type: 'chat:toolStart', name, args });
               },
               onToolEnd: (name: string, result?: any, error?: string) => {
                 console.log(`[SW] 🔧 Tool end: ${name} (error: ${error || ''})`);
@@ -101,7 +117,8 @@ export async function handleChatStream(port: chrome.runtime.Port) {
                     .sendMessage(streamTabId, { type: 'indicator:hide_action' })
                     .catch(() => {});
                 }
-                if (!disposed) port.postMessage({ type: 'chat:toolEnd', name, result, error });
+                const resultStr = result?.content ? String(result.content) : undefined;
+                if (!disposed) port.postMessage({ type: 'chat:toolEnd', name, result: resultStr, error });
               },
               onError: (err: string) => {
                 console.error('[SW] ❌ Stream error:', err);
