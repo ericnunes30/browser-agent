@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useChat, type PermissionMode } from '../ChatContext';
+import { useChat, type PermissionMode, type ImageAttachment } from '../ChatContext';
 import { t } from '../../utils/i18n';
 import { CommandsMenu, DEFAULT_COMMANDS, Command } from './CommandsMenu';
 
@@ -302,6 +302,7 @@ export default function ChatInput() {
   const [text, setText] = useState('');
   const [showCommands, setShowCommands] = useState(false);
   const [highRiskDismissed, setHighRiskDismissed] = useState(false);
+  const [attachments, setAttachments] = useState<ImageAttachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { sendMessage, isStreaming, messages, permissionMode, setPermissionMode, stopGeneration, clearConversation, activeProvider, activeModel } = useChat();
@@ -323,14 +324,15 @@ export default function ChatInput() {
 
   const handleSubmit = useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || isStreaming) return;
-    sendMessage(trimmed);
+    if ((!trimmed && attachments.length === 0) || isStreaming) return;
+    sendMessage(trimmed, attachments.length > 0 ? attachments : undefined);
     setText('');
+    setAttachments([]);
     // Reset height to CSS default (rows={1}) after clearing
     if (textareaRef.current) {
       textareaRef.current.style.height = '';
     }
-  }, [text, isStreaming, sendMessage]);
+  }, [text, isStreaming, sendMessage, attachments]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && showCommands) {
@@ -360,15 +362,62 @@ export default function ChatInput() {
   }, []);
 
   const handleUpload = useCallback(() => {
+    console.log('[BA Upload] handleUpload called, fileInputRef:', fileInputRef.current);
     fileInputRef.current?.click();
   }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    // File upload support - future enhancement
-    if (e.target.files) {
-      // Reset
-      e.target.value = '';
+    const files = e.target.files;
+    console.log('[BA Upload] files selected:', files?.length ?? 0, files ? Array.from(files).map(f => f.name) : 'none');
+    if (!files || files.length === 0) {
+      console.log('[BA Upload] no files selected');
+      return;
     }
+
+    const newAttachments: ImageAttachment[] = [];
+    let processed = 0;
+    const totalFiles = files.length;
+
+    const checkDone = () => {
+      processed++;
+      console.log('[BA Upload] processed', processed, 'of', totalFiles);
+      if (processed === totalFiles) {
+        console.log('[BA Upload] adding', newAttachments.length, 'attachments');
+        if (newAttachments.length > 0) {
+          setAttachments((prev) => [...prev, ...newAttachments]);
+        }
+      }
+    };
+
+    for (const file of Array.from(files)) {
+      console.log('[BA Upload] checking file:', file.name, 'type:', file.type);
+      if (!file.type.startsWith('image/')) {
+        console.log('[BA Upload] skipped non-image:', file.name);
+        checkDone();
+        continue;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        console.log('[BA Upload] loaded image:', file.name, 'dataUrl length:', dataUrl.length);
+        newAttachments.push({
+          id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          dataUrl,
+          name: file.name,
+          type: file.type,
+        });
+        checkDone();
+      };
+      reader.onerror = () => {
+        console.error('[BA Upload] Failed to read image:', file.name);
+        checkDone();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Reset input so same file can be selected again
+    e.target.value = '';
   }, []);
 
   const handleCommand = useCallback((cmd: Command) => {
@@ -444,6 +493,52 @@ export default function ChatInput() {
             onClose={handleCommandsClose}
           />
         )}
+        {/* Image attachments preview */}
+        {attachments.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, padding: '8px 12px 0', flexWrap: 'wrap' }}>
+            {attachments.map((att) => (
+              <div key={att.id} style={{ position: 'relative' }}>
+                <img
+                  src={att.dataUrl}
+                  alt={att.name}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    objectFit: 'cover',
+                    borderRadius: 8,
+                    border: '1px solid var(--color-border-200)',
+                  }}
+                />
+                <button
+                  onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: 'var(--color-bg-300)',
+                    border: '1px solid var(--color-border-200)',
+                    color: 'var(--color-text-000)',
+                    fontSize: 10,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                  }}
+                  title="Remove"
+                >
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Textarea */}
         <div style={{ padding: '12px 12px 8px' }}>
           <textarea

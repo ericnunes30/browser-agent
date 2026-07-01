@@ -484,7 +484,6 @@ const SNAPSHOT_SCRIPT = `
     window[COUNTER] = (window[COUNTER] || 0) + 1;
     const snapshotId = window[COUNTER];
     
-    const results = [];
     let uidCounter = 0;
     
     function getRole(el) {
@@ -506,6 +505,17 @@ const SNAPSHOT_SCRIPT = `
       return map[tag] || 'generic';
     }
     
+    function getDirectText(el) {
+      // Get text from this element only (not children)
+      let text = '';
+      for (const node of el.childNodes) {
+        if (node.nodeType === 3) { // TEXT_NODE
+          text += node.textContent;
+        }
+      }
+      return text.trim();
+    }
+    
     function getName(el) {
       return el.getAttribute('aria-label')
         || el.getAttribute('placeholder')
@@ -513,7 +523,7 @@ const SNAPSHOT_SCRIPT = `
         || el.getAttribute('alt')
         || (el.labels && el.labels[0] && el.labels[0].textContent && el.labels[0].textContent.trim())
         || (['INPUT', 'TEXTAREA'].includes(el.tagName) && el.value && el.value.trim())
-        || (['A', 'BUTTON', 'SUMMARY', 'LABEL', 'SPAN'].includes(el.tagName) && el.textContent && el.textContent.trim())
+        || getDirectText(el)  // ← CAPTURA TEXTO DE QUALQUER ELEMENTO
         || (el.getAttribute('aria-describedby') ? document.getElementById(el.getAttribute('aria-describedby'))?.textContent?.trim() : '')
         || '';
     }
@@ -523,7 +533,7 @@ const SNAPSHOT_SCRIPT = `
         const style = window.getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) return false;
         const rect = el.getBoundingClientRect();
-        if (rect.width < 4 || rect.height < 4) return false;
+        if (rect.width < 2 || rect.height < 2) return false;
         return true;
       } catch(e) { return false; }
     }
@@ -535,26 +545,30 @@ const SNAPSHOT_SCRIPT = `
       return '';
     }
     
-    const interactiveRoles = new Set(['button', 'link', 'textbox', 'combobox', 'checkbox', 'radio',
-      'heading', 'img', 'navigation', 'banner', 'main', 'form', 'list', 'listitem',
-      'tab', 'tabpanel', 'dialog', 'alertdialog', 'menu', 'menuitem', 'option',
-      'progressbar', 'slider', 'switch', 'tree', 'treeitem', 'searchbox',
-      'search', 'none', 'generic']);
+    // Tags that are always interesting even if generic
+    const alwaysInclude = new Set(['a','button','input','textarea','select','img','nav','header','footer','main','aside','form','h1','h2','h3','h4','h5','h6','ul','ol','li','table','video','audio','canvas','iframe','label','p','pre','code','article','section']);
     
     function walk(el, depth) {
-      if (depth > 20 || !el || el.nodeType !== 1) return null;
+      if (depth > 25 || !el || el.nodeType !== 1) return null;
       if (!isVisible(el)) return null;
       
       const role = getRole(el);
       const name = getName(el);
       const tag = el.tagName.toLowerCase();
+      const hasText = name.length > 0;
+      const isAlways = alwaysInclude.has(tag);
       
-      // Skip pure generic/div wrappers with no interactive children
-      if (role === 'generic' && !name && !['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'IMG', 'NAV', 'HEADER', 'FOOTER', 'MAIN', 'ASIDE', 'FORM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'TABLE', 'VIDEO', 'AUDIO', 'CANVAS', 'IFRAME', 'LABEL'].includes(el.tagName)) {
+      // If it's a generic wrapper with no text and not always-include, 
+      // try to extract children directly
+      if (role === 'generic' && !hasText && !isAlways) {
         const children = [];
         for (const child of el.children) {
           const r = walk(child, depth + 1);
-          if (r) children.push(r);
+          if (r) {
+            if (Array.isArray(r)) children.push(...r);
+            else if (r.type === 'group') children.push(...r.children);
+            else children.push(r);
+          }
         }
         return children.length > 0 ? { type: 'group', children } : null;
       }
@@ -580,6 +594,7 @@ const SNAPSHOT_SCRIPT = `
       if (el.getAttribute('aria-expanded') !== null) node.expanded = el.getAttribute('aria-expanded');
       if (el.getAttribute('aria-selected') !== null) node.selected = el.getAttribute('aria-selected');
       if (el.getAttribute('aria-checked') !== null) node.checked = el.getAttribute('aria-checked');
+      if (el.getAttribute('href')) node.href = el.getAttribute('href');
       
       // Children
       const children = [];
@@ -609,11 +624,26 @@ const SNAPSHOT_SCRIPT = `
       return result;
     }
     
-    const rawRoot = document.body ? walk(document.body, 0) : null;
-    const root = rawRoot ? (rawRoot.type === 'group' ? { uid: 'root', role: 'root', name: 'Page', tag: 'body', children: rawRoot.children } : rawRoot) : null;
+    // Walk from body, but also check shadow roots
+    const roots = [document.body];
+    const allChildren = [];
+    
+    for (const rootEl of roots) {
+      if (!rootEl) continue;
+      const rawRoot = walk(rootEl, 0);
+      if (rawRoot) {
+        if (rawRoot.type === 'group') {
+          allChildren.push(...rawRoot.children);
+        } else {
+          allChildren.push(rawRoot);
+        }
+      }
+    }
+    
+    const root = allChildren.length > 0 ? { uid: 'root', role: 'root', name: document.title || 'Page', tag: 'body', children: allChildren } : null;
     return { snapshotId: 'snap_' + snapshotId, root };
   } catch(e) {
-    return { error: e.message };
+    return { error: e.message + '\\n' + e.stack };
   }
 })();
 `;
@@ -724,9 +754,123 @@ async function executeComputerTool(
 
       case 'type': {
         const text = input.text ?? '';
-        await debuggerManager.type(tabId, text);
+        if (!text) {
+          return { type: 'tool_result', content: 'type requires text.' };
+        }
+        // Claude in Chrome style: use chrome.scripting to simulate real typing
+        // with keydown/keypress/input/keyup events per character
+        const escapedText = text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+        const typeScript = `
+(async function(value) {
+  try {
+    const el = document.activeElement || document.body;
+    if (!el) return { success: false, error: 'No active element to type into' };
+
+    // Focus the element first
+    if (typeof el.focus === 'function') el.focus();
+
+    // For contenteditable or text inputs, type character by character
+    const isTextInput = el.tagName === 'INPUT' && /^(text|search|email|url|password|tel)$/i.test(el.type || 'text');
+    const isTextarea = el.tagName === 'TEXTAREA';
+    const isContentEditable = el.isContentEditable;
+
+    if (!isTextInput && !isTextarea && !isContentEditable) {
+      // Try to find a focused or text-accepting element
+      const candidate = document.activeElement;
+      if (!candidate || (candidate.tagName !== 'INPUT' && candidate.tagName !== 'TEXTAREA' && !candidate.isContentEditable)) {
+        return { success: false, error: 'No text input focused. Use click to focus a field, then type.' };
+      }
+    }
+
+    for (let i = 0; i < value.length; i++) {
+      const ch = value[i];
+      const keyCode = ch.charCodeAt(0);
+
+      // Dispatch keydown
+      el.dispatchEvent(new KeyboardEvent('keydown', {
+        key: ch,
+        code: ch === ' ' ? 'Space' : 'Key' + ch.toUpperCase(),
+        keyCode,
+        which: keyCode,
+        bubbles: true,
+        cancelable: true,
+      }));
+
+      // Dispatch keypress
+      el.dispatchEvent(new KeyboardEvent('keypress', {
+        key: ch,
+        code: ch === ' ' ? 'Space' : 'Key' + ch.toUpperCase(),
+        keyCode,
+        which: keyCode,
+        bubbles: true,
+        cancelable: true,
+      }));
+
+      // Insert the character
+      if (isContentEditable) {
+        // For contenteditable, insert at cursor
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode(ch));
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      } else if (isTextInput || isTextarea) {
+        // For input/textarea, insert at cursor position
+        const start = el.selectionStart || 0;
+        const end = el.selectionEnd || 0;
+        const current = el.value || '';
+        el.value = current.substring(0, start) + ch + current.substring(end);
+        const newPos = start + ch.length;
+        el.setSelectionRange(newPos, newPos);
+      }
+
+      // Dispatch input event
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // Dispatch keyup
+      el.dispatchEvent(new KeyboardEvent('keyup', {
+        key: ch,
+        code: ch === ' ' ? 'Space' : 'Key' + ch.toUpperCase(),
+        keyCode,
+        which: keyCode,
+        bubbles: true,
+        cancelable: true,
+      }));
+
+      // Small delay between characters for natural typing
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    // Dispatch change event for inputs
+    if (isTextInput || isTextarea) {
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    return { success: true, typed: value.length };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+})('${escapedText}');
+`;
+        const result = await chrome.scripting.executeScript({
+          target: { tabId },
+          func: () => undefined, // placeholder, we use the script below
+        }).catch(() => [{ result: null }]);
+
+        // Use injectAndEval which uses debugger (more reliable than scripting for some pages)
+        const evalResult = await injectAndEval(tabId, typeScript) as string;
+        let parsed: any = {};
+        try { parsed = JSON.parse(evalResult); } catch { parsed = { raw: evalResult }; }
+
+        if (!parsed.success) {
+          return { type: 'tool_result', content: parsed.error || 'Type failed', error: parsed.error || 'Type failed' };
+        }
         notifyAction();
-        return { type: 'tool_result', content: `Typed "${text}".` };
+        return { type: 'tool_result', content: `Typed "${text}" (${parsed.typed || text.length} chars).` };
       }
 
       case 'keypress': {

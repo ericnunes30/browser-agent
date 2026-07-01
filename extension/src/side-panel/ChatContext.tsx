@@ -5,11 +5,30 @@ import { ChatStream } from './chat-stream';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 
+export interface ToolExecution {
+  id: string;
+  name: string;
+  args?: Record<string, unknown>;
+  result?: string;
+  error?: string;
+  status: 'running' | 'done' | 'error';
+  timestamp: number;
+}
+
+export interface ImageAttachment {
+  id: string;
+  dataUrl: string;
+  name: string;
+  type: string;
+}
+
 export interface DisplayMessage {
   id: string;
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
+  attachments?: ImageAttachment[];
   reasoning?: string;
+  toolExecutions?: ToolExecution[];
   tool_calls?: Array<{ id: string; name: string; arguments: Record<string, unknown> }>;
   tool_call_id?: string;
   name?: string;
@@ -21,7 +40,7 @@ export type PermissionMode = 'follow_a_plan' | 'skip_all_permission_checks';
 
 interface ChatContextValue {
   messages: DisplayMessage[];
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, attachments?: ImageAttachment[]) => Promise<void>;
   clearConversation: () => void;
   isStreaming: boolean;
   stopGeneration: () => void;
@@ -58,6 +77,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const messagesRef = useRef<DisplayMessage[]>([]);
   const chatStreamRef = useRef<ChatStream | null>(null);
+  const currentAssistantIdRef = useRef<string>('');
 
   // Load provider/model from storage on mount
   useEffect(() => {
@@ -237,15 +257,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, attachments?: ImageAttachment[]) => {
       if (isStreaming) return;
       setIsStreaming(true);
 
-      // Add user message
+      // Add user message (with attachments if any)
       const userMsg: DisplayMessage = {
         id: nextId(),
         role: 'user',
         content: text,
+        ...(attachments && attachments.length > 0 ? { attachments } : {}),
         timestamp: Date.now(),
       };
       setMessages((prev) => {
@@ -267,6 +288,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         messagesRef.current = updated;
         return updated;
       });
+      currentAssistantIdRef.current = assistantMsg.id;
 
       if (!activeProvider || !activeModel) {
         updateMessage(assistantMsg.id, 'No provider/model selected. Open options.');
@@ -283,18 +305,50 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         // no tab
       }
 
-      // Build conversation history (local type — ChatMessage removed from shared types)
-      const history: Array<{ role: string; content: string; tool_call_id?: string; name?: string }> = messagesRef.current
-        .slice(0, -1) // exclude the placeholder
-        .filter((m) => m.role === 'user' || m.role === 'tool' || (m.role === 'assistant' && (m.content || m.tool_calls)))
-        .map((m) => ({
-          role: m.role,
-          content: m.content,
-          // Do NOT include tool_calls from previous turns —
-          // the LLM would see them without corresponding tool_result messages.
-          // The SW's internal tool loop handles tool execution in one turn.
-          ...(m.tool_call_id && m.role === 'tool' ? { tool_call_id: m.tool_call_id, name: m.name } : {}),
-        }));
+      // Build conversation history with system prompt for clean responses
+      const systemPrompt = `You are a browser automation assistant. You help users interact with web pages through tools.
+
+CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
+- When giving the FINAL response after using tools, be CONCISE and directly answer the user's question.
+- NEVER repeat or summarize the full history of what was done step-by-step. The user already saw the tool executions in the chat.
+- DO NOT list every action taken, every tab visited, or every screenshot captured.
+- DO NOT repeat the full list of tabs unless explicitly asked.
+- Use markdown formatting: **bold** for emphasis, tables for structured data, and lists when helpful.
+- Focus on the RESULTS and KEY INFORMATION, not the process.
+- If the user asked to take screenshots, mention that they were captured, but don't describe each one in detail.
+- Keep the final response to 2-4 short paragraphs maximum unless the user specifically asked for details.`;
+
+      // Message content can be string or ContentPart array (for images)
+      type HistoryContent = string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
+
+      const history: Array<{ role: string; content: HistoryContent; tool_call_id?: string; name?: string }> = [
+        { role: 'system', content: systemPrompt },
+        ...messagesRef.current
+          .slice(0, -1) // exclude the placeholder
+          .filter((m) => m.role === 'user' || m.role === 'tool' || (m.role === 'assistant' && (m.content || m.tool_calls)))
+          .map((m) => {
+            // Convert attachments to ContentPart array for user messages with images
+            let content: HistoryContent = m.content;
+            if (m.role === 'user' && m.attachments && m.attachments.length > 0) {
+              const parts: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = [];
+              if (m.content.trim()) {
+                parts.push({ type: 'text', text: m.content });
+              }
+              for (const att of m.attachments) {
+                parts.push({ type: 'image_url', image_url: { url: att.dataUrl } });
+              }
+              content = parts;
+            }
+            return {
+              role: m.role,
+              content,
+              // Do NOT include tool_calls from previous turns —
+              // the LLM would see them without corresponding tool_result messages.
+              // The SW's internal tool loop handles tool execution in one turn.
+              ...(m.tool_call_id && m.role === 'tool' ? { tool_call_id: m.tool_call_id, name: m.name } : {}),
+            };
+          }),
+      ];
 
       // Use streaming via port
       const stream = new ChatStream();
@@ -303,9 +357,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       try {
         stream.start(activeProvider, activeModel, history, activeTabId, {
         onDelta: (deltaText: string) => {
+          const targetId = currentAssistantIdRef.current;
+          if (!targetId) return;
           setMessages((prev: DisplayMessage[]) => {
             const updated = prev.map((m: DisplayMessage) =>
-              m.id === assistantMsg.id
+              m.id === targetId
                 ? { ...m, content: m.content + deltaText }
                 : m,
             );
@@ -314,9 +370,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           });
         },
         onReasoning: (text: string) => {
+          const targetId = currentAssistantIdRef.current;
+          if (!targetId) return;
           setMessages((prev: DisplayMessage[]) => {
             const updated = prev.map((m: DisplayMessage) =>
-              m.id === assistantMsg.id
+              m.id === targetId
                 ? { ...m, reasoning: (m.reasoning || '') + text }
                 : m,
             );
@@ -324,24 +382,103 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             return updated;
           });
         },
-        onToolStart: (_name: string) => {
-          // No action needed for basic streaming
+        onToolStart: (name: string, args?: Record<string, unknown>) => {
+          // 1. Freeze current assistant message (remove streaming)
+          const frozenId = currentAssistantIdRef.current;
+          if (frozenId) {
+            setMessages((prev: DisplayMessage[]) => {
+              const updated = prev.map((m: DisplayMessage) =>
+                m.id === frozenId ? { ...m, streaming: false } : m,
+              );
+              messagesRef.current = updated;
+              return updated;
+            });
+          }
+
+          // 2. Create tool execution message
+          const toolMsg: DisplayMessage = {
+            id: nextId(),
+            role: 'tool',
+            content: '',
+            name,
+            toolExecutions: [{
+              id: `tool_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+              name,
+              args,
+              status: 'running' as const,
+              timestamp: Date.now(),
+            }],
+            timestamp: Date.now(),
+            streaming: true,
+          };
+          setMessages((prev: DisplayMessage[]) => {
+            const updated = [...prev, toolMsg];
+            messagesRef.current = updated;
+            return updated;
+          });
+
+          // 3. Create new assistant placeholder for next text
+          const newAssistantMsg: DisplayMessage = {
+            id: nextId(),
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            streaming: true,
+          };
+          setMessages((prev: DisplayMessage[]) => {
+            const updated = [...prev, newAssistantMsg];
+            messagesRef.current = updated;
+            return updated;
+          });
+          currentAssistantIdRef.current = newAssistantMsg.id;
         },
-        onToolEnd: (_name: string) => {
-          // No action needed for basic streaming
+        onToolEnd: (name: string, result?: string, error?: string) => {
+          // Find the most recent tool message that is running
+          setMessages((prev: DisplayMessage[]) => {
+            const reversed = [...prev].reverse();
+            const toolIdx = reversed.findIndex((m) =>
+              m.role === 'tool' && m.streaming && m.toolExecutions?.some((e) => e.name === name && e.status === 'running'),
+            );
+            if (toolIdx === -1) return prev;
+            const actualIdx = prev.length - 1 - toolIdx;
+            const updated = [...prev];
+            const toolMsg = updated[actualIdx];
+            const execs = toolMsg.toolExecutions || [];
+            const lastIdx = [...execs].reverse().findIndex((e) => e.name === name && e.status === 'running');
+            if (lastIdx === -1) return prev;
+            const execIdx = execs.length - 1 - lastIdx;
+            const newExecs = [...execs];
+            newExecs[execIdx] = {
+              ...newExecs[execIdx],
+              result,
+              error,
+              status: error ? 'error' : 'done' as const,
+            };
+            updated[actualIdx] = { ...toolMsg, toolExecutions: newExecs, streaming: false };
+            messagesRef.current = updated;
+            return updated;
+          });
         },
         onContinuePrompt: () => {
           setShowContinuePrompt(true);
         },
         onDone: (content: string, reasoning?: string) => {
-          updateMessage(assistantMsg.id, content, reasoning);
+          const targetId = currentAssistantIdRef.current;
+          if (targetId) {
+            updateMessage(targetId, content, reasoning);
+          }
           setIsStreaming(false);
           chatStreamRef.current = null;
+          currentAssistantIdRef.current = '';
         },
         onError: (error: string) => {
-          updateMessage(assistantMsg.id, `Error: ${error}`);
+          const targetId = currentAssistantIdRef.current;
+          if (targetId) {
+            updateMessage(targetId, `Error: ${error}`);
+          }
           setIsStreaming(false);
           chatStreamRef.current = null;
+          currentAssistantIdRef.current = '';
         },
       });
       } catch (e) {
