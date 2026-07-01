@@ -10,23 +10,27 @@ import { ALL_TOOLS, executeTool } from './tools';
 import { startKeepAlive, stopKeepAlive } from './keep-alive';
 
 /**
- * Convert the simplified side-panel message history into the adapter's
+ * Convert the side-panel message history into the adapter's
  * ChatMessage format.
+ * Supports both string content and ContentPart arrays (for images).
  */
 function convertMessages(
   messages: Array<{
     role: string;
-    content: string;
+    content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
     tool_call_id?: string;
     name?: string;
   }>,
 ): ChatMessage[] {
-  return messages.map((m) => ({
-    role: m.role as ChatMessage['role'],
-    content: m.content,
-    ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
-    ...(m.name ? { name: m.name } : {}),
-  }));
+  return messages.map((m) => {
+    const result: any = {
+      role: m.role as ChatMessage['role'],
+      content: m.content,
+    };
+    if (m.tool_call_id) result.tool_call_id = m.tool_call_id;
+    if (m.name) result.name = m.name;
+    return result;
+  });
 }
 
 /**
@@ -190,7 +194,7 @@ export async function sendChatPrompt(
       }
     }
 
-    // Build the assistant message with tool_calls for context
+    // Build the assistant message with tool_calls for context.
     const assistantMsg: ChatMessage = {
       role: 'assistant',
       content: textContent || '',
