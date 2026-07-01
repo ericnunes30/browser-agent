@@ -19,6 +19,8 @@
     "extension/config/**/*.json"
   ],
   "exclude": [
-    "extension/src/**/__tests__/**"
+    "extension/src/**/__tests__/**",
+    "extension/src/**/*.test.ts",
+    "extension/src/**/*.test.tsx"
   ]
 }
