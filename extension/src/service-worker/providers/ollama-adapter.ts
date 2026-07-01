@@ -16,12 +16,28 @@ import type {
   StreamCallbacks,
 } from './adapter';
 
-function joinContent(content: string | ContentPart[] | undefined): string {
-  if (!content) return '';
-  if (typeof content === 'string') return content;
-  return content
-    .map((part) => (part.type === 'text' ? part.text ?? '' : ''))
-    .join('');
+function extractTextAndImages(content: string | ContentPart[] | undefined): { text: string; images: string[] } {
+  if (!content) return { text: '', images: [] };
+  if (typeof content === 'string') return { text: content, images: [] };
+
+  const images: string[] = [];
+  let text = '';
+  for (const part of content) {
+    if (part.type === 'text' && part.text) {
+      text += part.text;
+    } else if (part.type === 'image_url' && part.image_url?.url) {
+      // Extract base64 from data URL or use URL directly
+      const url = part.image_url.url;
+      if (url.startsWith('data:')) {
+        // data:image/png;base64,ABC123... → extract base64 part
+        const base64Part = url.split(',')[1];
+        if (base64Part) images.push(base64Part);
+      } else {
+        images.push(url);
+      }
+    }
+  }
+  return { text, images };
 }
 
 function pickModelId(model: { name?: string; model?: string }): string {
@@ -169,10 +185,15 @@ export class OllamaAdapter implements ProviderAdapter {
     const body: Record<string, unknown> = {
       model: params.model,
       messages: params.messages.map((message) => {
+        const { text, images } = extractTextAndImages(message.content);
         const msg: Record<string, unknown> = {
           role: message.role,
-          content: joinContent(message.content),
+          content: text,
         };
+        // Ollama supports images via the 'images' field (base64 array)
+        if (images.length > 0) {
+          msg.images = images;
+        }
         // Ollama tool_calls: arguments must be an object, not a JSON string
         if (message.tool_calls && message.tool_calls.length > 0) {
           msg.tool_calls = message.tool_calls.map((tc) => {
