@@ -70,6 +70,12 @@
   "status_disconnected": { "message": "Disconnected" },
 
   "search_provider_section": { "message": "Search Engine" },
+  "agent_settings_section": { "message": "Agent Settings" },
+  "max_iterations_label": { "message": "Max tool iterations" },
+  "max_iterations_help": { "message": "How many tool calls the agent can make before asking to continue. Higher values allow longer autonomous tasks but use more tokens." },
+  "max_iterations_range": { "message": "Range: $min$–$max$ (default: $default$)" },
+  "save": { "message": "Save" },
+  "saved": { "message": "Saved" },
   "search_provider_url": { "message": "Search Engine URL" },
   "search_provider_parser": { "message": "Parser type" },
   "search_provider_api_key": { "message": "API Key (optional)" },

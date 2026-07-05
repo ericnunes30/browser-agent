@@ -45,8 +45,23 @@ export function getAdapterTools(): AdapterToolDefinition[] {
   }));
 }
 
-/** Maximum number of tool-call iterations before asking user to continue. */
-const MAX_TOOL_ITERATIONS = 10;
+/**
+ * Read the user-configured max tool iterations from chrome.storage.
+ * Falls back to a sensible default (30) if not set or invalid.
+ */
+async function getMaxToolIterations(): Promise<number> {
+  try {
+    const result = await chrome.storage.local.get('ba-max-tool-iterations');
+    const value = result['ba-max-tool-iterations'];
+    const parsed = typeof value === 'number' ? value : parseInt(String(value), 10);
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 100) {
+      return parsed;
+    }
+  } catch {
+    // ignore — fall through to default
+  }
+  return 30;
+}
 
 /**
  * Send a prompt through the active provider using ProviderManager.
@@ -85,9 +100,12 @@ export async function sendChatPrompt(
   let currentMessages = [...params.messages];
   let iteration = 0;
 
+  // Read user-configured max iterations from storage
+  const maxIterations = await getMaxToolIterations();
+
   while (true) {
     // Check iteration limit — ask user to continue or stop
-    if (iteration >= MAX_TOOL_ITERATIONS) {
+    if (iteration >= maxIterations) {
       if (onContinuePrompt) {
         const shouldContinue = await onContinuePrompt();
         if (shouldContinue) {

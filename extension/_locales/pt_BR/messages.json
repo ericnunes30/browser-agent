@@ -70,6 +70,12 @@
   "status_disconnected": { "message": "Desligado" },
 
   "search_provider_section": { "message": "Motor de Busca" },
+  "agent_settings_section": { "message": "Configurações do Agente" },
+  "max_iterations_label": { "message": "Máximo de iterações de tools" },
+  "max_iterations_help": { "message": "Quantas tools o agente pode chamar antes de pedir para continuar. Valores maiores permitem tarefas autônomas mais longas, mas usam mais tokens." },
+  "max_iterations_range": { "message": "Faixa: $min$–$max$ (padrão: $default$)" },
+  "save": { "message": "Salvar" },
+  "saved": { "message": "Salvo" },
   "search_provider_url": { "message": "URL do Motor de Busca" },
   "search_provider_parser": { "message": "Tipo de parser" },
   "search_provider_api_key": { "message": "Chave de API (opcional)" },

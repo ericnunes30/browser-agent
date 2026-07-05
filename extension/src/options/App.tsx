@@ -8,6 +8,13 @@ import type {
   SearchProviderConfig,
   StoredProviderConfig,
 } from '../service-worker/providers/types';
+import {
+  DEFAULT_MAX_TOOL_ITERATIONS,
+  MAX_MAX_TOOL_ITERATIONS,
+  MIN_MAX_TOOL_ITERATIONS,
+  loadOptions as loadExtensionOptions,
+  saveOptions as saveExtensionOptions,
+} from './options-config';
 import { ProviderForm } from './ProviderForm';
 import { ProviderList } from './ProviderList';
 import { RawJsonViewer } from './RawJsonViewer';
@@ -60,6 +67,9 @@ export function App() {
 
   const [customModels, setCustomModels] = useState<CustomModelEntry[]>([]);
 
+  const [maxToolIterations, setMaxToolIterations] = useState<number>(DEFAULT_MAX_TOOL_ITERATIONS);
+  const [maxIterationsSaved, setMaxIterationsSaved] = useState(false);
+
   interface SitePermissions {
     allowlist: string[];
     denylist: string[];
@@ -84,6 +94,10 @@ export function App() {
     });
 
     loadCustomModels().then(setCustomModels);
+
+    loadExtensionOptions().then((opts) => {
+      setMaxToolIterations(opts.maxToolIterations);
+    });
 
     chrome.storage.local.get('ba-default-model', (result) => {
       if (result['ba-default-model']) {
@@ -322,6 +336,23 @@ export function App() {
     }
   }, []);
 
+  const handleMaxIterationsChange = useCallback(
+    (raw: string) => {
+      const parsed = parseInt(raw, 10);
+      if (Number.isFinite(parsed)) {
+        setMaxToolIterations(parsed);
+        setMaxIterationsSaved(false);
+      }
+    },
+    [],
+  );
+
+  const handleMaxIterationsSave = useCallback(async () => {
+    await saveExtensionOptions({ maxToolIterations });
+    setMaxIterationsSaved(true);
+    setTimeout(() => setMaxIterationsSaved(false), 2000);
+  }, [maxToolIterations]);
+
   const handleCustomModelsChange = useCallback(async (entries: CustomModelEntry[]) => {
     setCustomModels(entries);
     await saveCustomModels(entries);
@@ -457,6 +488,39 @@ export function App() {
             ))}
           </select>
         </label>
+      </section>
+
+      <section className="provider-section">
+        <h2>{t('agent_settings_section')}</h2>
+        <p style={{ fontSize: 12, color: 'var(--color-text-400)', margin: '0 0 12px' }}>
+          {t('max_iterations_help')}
+        </p>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ minWidth: 200 }}>{t('max_iterations_label')}</span>
+          <input
+            type="number"
+            min={MIN_MAX_TOOL_ITERATIONS}
+            max={MAX_MAX_TOOL_ITERATIONS}
+            value={maxToolIterations}
+            onChange={(e) => handleMaxIterationsChange(e.target.value)}
+            style={{ width: 80 }}
+          />
+          <button
+            onClick={handleMaxIterationsSave}
+            className="btn-test"
+            disabled={maxIterationsSaved}
+          >
+            {maxIterationsSaved ? t('saved') : t('save')}
+          </button>
+        </label>
+        <p style={{ fontSize: 11, color: 'var(--color-text-400)', margin: '4px 0 0 212px' }}>
+          {t(
+            'max_iterations_range',
+            String(MIN_MAX_TOOL_ITERATIONS),
+            String(MAX_MAX_TOOL_ITERATIONS),
+            String(DEFAULT_MAX_TOOL_ITERATIONS),
+          )}
+        </p>
       </section>
 
       <section className="provider-section">
