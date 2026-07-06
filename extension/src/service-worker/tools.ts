@@ -54,7 +54,7 @@ export const COMPUTER_TOOL: ToolDefinition = {
     '  - type: type text into the currently focused element (no uid needed).',
     '  - keypress: press keyboard keys like Enter, Tab, Escape, ArrowDown, etc. Use keys array, e.g. keys: ["Enter"]',
     '  - scroll: scroll by dx, dy pixels',
-    '  - wait: wait for duration ms',
+    '  - wait: wait for duration ms. BLOCKS the agent and the page for the given duration. Use after navigation, click, or any action that triggers a page change so the next call sees the updated page.',
     '  - screenshot: capture a screenshot of the tab',
     '* After typing text with type or fill action, use keypress action with keys: ["Enter"] to submit forms / send messages.',
     '* You do NOT need to use pixel coordinates — all element interaction is done via uid from the snapshot.',
@@ -89,7 +89,7 @@ export const COMPUTER_TOOL: ToolDefinition = {
       },
       duration: {
         type: 'number',
-        description: 'Wait duration in milliseconds — used with the wait action.',
+        description: 'Wait duration in milliseconds. REQUIRED for the wait action. Example: duration: 2000 waits 2 seconds.',
       },
       tabId: {
         type: 'number',
@@ -889,9 +889,29 @@ async function executeComputerTool(
 
       case 'wait': {
         const ms = input.duration ?? 1000;
-        await new Promise((r) => setTimeout(r, ms));
+        console.log(`[SW] ⏱️ wait: ${ms}ms (input.duration=${input.duration})`);
+
+        // Wait in BOTH the SW and the page context.
+        // - SW wait blocks the tool loop so the LLM can't get the tool result early.
+        // - Page wait gives the page real time to animate, fetch, render, etc.
+        // The longer of the two wins; the result only returns after both finish.
+        const swWait = new Promise<void>((r) => setTimeout(r, ms));
+        const pageWait = chrome.scripting
+          .executeScript({
+            target: { tabId },
+            func: (waitMs: number) =>
+              new Promise<void>((r) => setTimeout(r, waitMs)),
+            args: [ms],
+          })
+          .catch(() => {
+            // Scripting may fail (chrome:// pages, restricted URLs, etc.)
+            // — fall back to SW-only wait.
+          });
+
+        await Promise.all([swWait, pageWait]);
         notifyAction();
-        return { type: 'tool_result', content: `Waited ${ms}ms.` };
+        console.log(`[SW] ✅ wait done: ${ms}ms`);
+        return { type: 'tool_result', content: `Waited ${ms}ms. Page had time to update.` };
       }
 
       default:
