@@ -342,6 +342,15 @@ export function App() {
       if (Number.isFinite(parsed)) {
         setMaxToolIterations(parsed);
         setMaxIterationsSaved(false);
+        // Auto-save on every change so users don't have to remember to click
+        // Save. This is the most common UX pattern for a single number input
+        // and avoids the "I changed it but it didn't stick" confusion.
+        saveExtensionOptions({ maxToolIterations: parsed })
+          .then(() => {
+            setMaxIterationsSaved(true);
+            setTimeout(() => setMaxIterationsSaved(false), 2000);
+          })
+          .catch((err) => console.error('Failed to save max iterations:', err));
       }
     },
     [],

@@ -55,10 +55,12 @@ async function getMaxToolIterations(): Promise<number> {
     const value = result['ba-max-tool-iterations'];
     const parsed = typeof value === 'number' ? value : parseInt(String(value), 10);
     if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 100) {
+      console.log(`[SW] 🔄 getMaxToolIterations: ${parsed} (raw from storage: ${JSON.stringify(value)})`);
       return parsed;
     }
-  } catch {
-    // ignore — fall through to default
+    console.log(`[SW] 🔄 getMaxToolIterations: invalid value ${JSON.stringify(value)}, using default 30`);
+  } catch (err) {
+    console.warn('[SW] 🔄 getMaxToolIterations: storage read failed, using default 30', err);
   }
   return 30;
 }
