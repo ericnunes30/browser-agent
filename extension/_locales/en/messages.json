@@ -73,7 +73,14 @@
   "agent_settings_section": { "message": "Agent Settings" },
   "max_iterations_label": { "message": "Max tool iterations" },
   "max_iterations_help": { "message": "How many tool calls the agent can make before asking to continue. Higher values allow longer autonomous tasks but use more tokens." },
-  "max_iterations_range": { "message": "Range: $min$–$max$ (default: $default$)" },
+  "max_iterations_range": {
+    "message": "Range: $min$–$max$ (default: $default$)",
+    "placeholders": {
+      "min": { "content": "$1" },
+      "max": { "content": "$2" },
+      "default": { "content": "$3" }
+    }
+  },
   "save": { "message": "Save" },
   "saved": { "message": "Saved" },
   "search_provider_url": { "message": "Search Engine URL" },
