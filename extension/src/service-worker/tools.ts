@@ -889,13 +889,29 @@ async function executeComputerTool(
 
       case 'wait': {
         const ms = input.duration ?? 1000;
+        const abortSignal = (input as { _abortSignal?: AbortSignal })._abortSignal;
         console.log(`[SW] ⏱️ wait: ${ms}ms (input.duration=${input.duration})`);
 
         // Wait in BOTH the SW and the page context.
         // - SW wait blocks the tool loop so the LLM can't get the tool result early.
         // - Page wait gives the page real time to animate, fetch, render, etc.
         // The longer of the two wins; the result only returns after both finish.
-        const swWait = new Promise<void>((r) => setTimeout(r, ms));
+        // Both timers respect _abortSignal so a Stop click unwinds instantly.
+        const abortableTimeout = (ms: number) =>
+          new Promise<void>((resolve) => {
+            if (abortSignal?.aborted) return resolve();
+            const t = setTimeout(resolve, ms);
+            abortSignal?.addEventListener(
+              'abort',
+              () => {
+                clearTimeout(t);
+                resolve();
+              },
+              { once: true },
+            );
+          });
+
+        const swWait = abortableTimeout(ms);
         const pageWait = chrome.scripting
           .executeScript({
             target: { tabId },
@@ -909,6 +925,11 @@ async function executeComputerTool(
           });
 
         await Promise.all([swWait, pageWait]);
+
+        if (abortSignal?.aborted) {
+          return { type: 'tool_result', content: 'Wait aborted by user.' };
+        }
+
         notifyAction();
         console.log(`[SW] ✅ wait done: ${ms}ms`);
         return { type: 'tool_result', content: `Waited ${ms}ms. Page had time to update.` };

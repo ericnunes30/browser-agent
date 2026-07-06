@@ -40,10 +40,17 @@ function convertMessages(
  */
 export async function handleChatStream(port: chrome.runtime.Port) {
   let disposed = false;
+  // AbortController fires when the user clicks Stop. The signal is
+  // propagated into sendChatPrompt + every awaitable point (tool calls,
+  // wait timers, continue prompt) so the loop actually unwinds instead
+  // of running in the background after the side panel moves on.
+  const abortController = new AbortController();
+  const { signal } = abortController;
 
   const dispose = () => {
     if (disposed) return;
     disposed = true;
+    abortController.abort();
     stopKeepAlive();
   };
 
@@ -134,7 +141,7 @@ export async function handleChatStream(port: chrome.runtime.Port) {
             streamTabId ?? undefined,
             // onContinuePrompt: ask user via port
             async (): Promise<boolean> => {
-              if (disposed) return false;
+              if (disposed || signal.aborted) return false;
               port.postMessage({ type: 'chat:continuePrompt' });
               return new Promise<boolean>((resolve) => {
                 const handler = (msg: any) => {
@@ -144,8 +151,16 @@ export async function handleChatStream(port: chrome.runtime.Port) {
                   }
                 };
                 port.onMessage.addListener(handler);
+                // If aborted while waiting for the user's response, resolve false
+                // so the loop exits cleanly.
+                const abortHandler = () => {
+                  port.onMessage.removeListener(handler);
+                  resolve(false);
+                };
+                signal.addEventListener('abort', abortHandler, { once: true });
               });
             },
+            signal,
           );
         } catch (err: unknown) {
           const errMsg = err instanceof Error ? err.message : String(err);

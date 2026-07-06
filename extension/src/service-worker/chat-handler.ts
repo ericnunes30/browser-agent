@@ -81,9 +81,16 @@ export async function sendChatPrompt(
   callbacks: StreamCallbacks,
   tabId?: number,
   onContinuePrompt?: () => Promise<boolean>,
+  signal?: AbortSignal,
 ): Promise<void> {
   const manager = ProviderManager.getInstance();
   const active = await manager.getActiveProvider();
+
+  // If the user hit Stop before we even picked a provider, bail out cleanly.
+  if (signal?.aborted) {
+    callbacks.onDone();
+    return;
+  }
 
   if (!active) {
     callbacks.onError('No provider configured. Open options to add one.');
@@ -103,11 +110,36 @@ export async function sendChatPrompt(
   // Read user-configured max iterations from storage
   const maxIterations = await getMaxToolIterations();
 
+  // Helper: wait for `ms` but bail out immediately if aborted.
+  const abortableWait = (ms: number): Promise<void> =>
+    new Promise((resolve) => {
+      if (signal?.aborted) return resolve();
+      const t = setTimeout(resolve, ms);
+      signal?.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(t);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+
   while (true) {
+    // Honor abort between iterations so a Stop click unwinds the loop.
+    if (signal?.aborted) {
+      callbacks.onDone();
+      return;
+    }
+
     // Check iteration limit — ask user to continue or stop
     if (iteration >= maxIterations) {
       if (onContinuePrompt) {
         const shouldContinue = await onContinuePrompt();
+        if (signal?.aborted) {
+          callbacks.onDone();
+          return;
+        }
         if (shouldContinue) {
           iteration = 0;
           // Continue the loop
@@ -188,7 +220,16 @@ export async function sendChatPrompt(
       const argsWithTab = {
         ...tc.args,
         tabId: (tc.args.tabId as number | undefined) ?? tabId,
+        // Internal channel so the wait tool can bail out immediately on Stop.
+        _abortSignal: signal,
       };
+
+      // If the user clicked Stop, don't execute the remaining tools in this
+      // batch — bail out of the loop entirely.
+      if (signal?.aborted) {
+        callbacks.onDone();
+        return;
+      }
 
       try {
         const result = await executeTool(tc.name, argsWithTab, tabId);
@@ -209,6 +250,13 @@ export async function sendChatPrompt(
           tool_call_id: tc.id,
           name: tc.name,
         });
+      }
+
+      // Honor abort between tools so a Stop during a long-running tool
+      // (e.g. a `wait` of 30s) doesn't keep executing the rest of the batch.
+      if (signal?.aborted) {
+        callbacks.onDone();
+        return;
       }
     }
 
