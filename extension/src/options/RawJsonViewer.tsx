@@ -61,7 +61,7 @@ export function RawJsonViewer({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
-        background: 'rgba(0, 0, 0, 0.6)',
+        background: 'rgba(18, 21, 23, 0.45)',
       }}
       onClick={onClose}
     >
@@ -73,16 +73,16 @@ export function RawJsonViewer({
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--color-bg-000)',
-          border: '0.5px solid var(--color-border-100)',
-          borderRadius: 12,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+          border: '1px solid var(--color-border-100)',
+          borderRadius: 6,
+          boxShadow: '0 24px 60px rgba(18, 21, 23, 0.18)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '0.5px solid var(--color-border-100)',
+            borderBottom: '1px solid var(--color-border-100)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -137,7 +137,7 @@ export function RawJsonViewer({
         <div
           style={{
             padding: '12px 20px',
-            borderBottom: '0.5px solid var(--color-border-100)',
+            borderBottom: '1px solid var(--color-border-100)',
             display: 'flex',
             gap: 12,
             alignItems: 'center',
@@ -155,12 +155,11 @@ export function RawJsonViewer({
               margin: 0,
               padding: '10px 12px',
               background: 'var(--color-bg-200)',
-              border: '0.5px solid var(--color-border-100)',
-              borderRadius: 8,
+              border: '1px solid var(--color-border-100)',
+              borderRadius: 6,
               color: 'var(--color-text-000)',
               fontSize: 13,
               fontFamily: 'inherit',
-              outline: 'none',
             }}
           />
           <button onClick={handleCopy} className="btn-test">
@@ -200,8 +199,8 @@ export function RawJsonViewer({
                 margin: 0,
                 padding: 14,
                 background: 'var(--color-bg-200)',
-                border: '0.5px solid var(--color-border-100)',
-                borderRadius: 8,
+                border: '1px solid var(--color-border-100)',
+                borderRadius: 6,
                 color: 'var(--color-text-000)',
                 fontSize: 12,
                 lineHeight: 1.5,

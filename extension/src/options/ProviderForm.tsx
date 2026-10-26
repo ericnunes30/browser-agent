@@ -252,12 +252,11 @@ export function ProviderForm({
                 marginTop: 6,
                 padding: '10px 12px',
                 background: 'var(--color-bg-200)',
-                border: '0.5px solid var(--color-border-100)',
-                borderRadius: 8,
+                border: '1px solid var(--color-border-100)',
+                borderRadius: 6,
                 color: 'var(--color-text-000)',
                 fontSize: 13,
                 fontFamily: 'inherit',
-                outline: 'none',
                 resize: 'vertical',
               }}
             />

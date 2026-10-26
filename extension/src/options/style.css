@@ -1,19 +1,44 @@
-/* ─── Claude Design System for Options Page ──────────────────── */
+/* --- Wayfinding Design System for Options Page (light only) --- */
 
 :root {
-  --color-brand: hsl(15, 63.1%, 59.6%);
-  --color-brand-hover: hsl(15, 63.1%, 52%);
-  --color-bg-000: hsl(60, 2.1%, 18.4%);
-  --color-bg-100: hsl(60, 2.7%, 14.5%);
-  --color-bg-200: hsl(30, 3.3%, 11.8%);
-  --color-bg-300: hsl(60, 2.6%, 7.6%);
-  --color-text-000: hsl(48, 33.3%, 97.1%);
-  --color-text-200: hsl(50, 9%, 73.7%);
-  --color-text-400: hsl(48, 4.8%, 59.2%);
-  --color-border-100: hsla(51, 16.5%, 84.5%, 0.15);
-  --color-border-200: hsla(51, 16.5%, 84.5%, 0.25);
-  --color-success: hsl(120, 40%, 50%);
-  --color-error: hsl(0, 60%, 55%);
+  --color-chalk: #F3F0E7;
+  --color-paper: #FBFAF5;
+  --color-ink: #121517;
+  --color-graphite: #5B6165;
+  --color-silver: #DCD9CF;
+  --color-cobalt: #1E46E8;
+  --color-sky: #DCE4FF;
+  --color-moss: #2E6B4F;
+  --color-amber: #C98A1E;
+  --color-signal: #D6472F;
+  --color-brand: #1E46E8;
+  --color-brand-hover: #16349E;
+  --color-brand-soft: #DCE4FF;
+  --color-brand-deep: #16349E;
+  --color-bg-000: #FBFAF5;
+  --color-bg-100: #FBFAF5;
+  --color-bg-200: #F3F0E7;
+  --color-bg-300: #E7E2D2;
+  --color-bg-400: #DCD9CF;
+  --color-text-000: #121517;
+  --color-text-100: #121517;
+  --color-text-200: #5B6165;
+  --color-text-300: #5B6165;
+  --color-text-400: #7C8286;
+  --color-border-100: #DCD9CF;
+  --color-border-200: #CFC9B8;
+  --color-border-300: #B3AC99;
+  --color-surface: #F3F0E7;
+  --color-surface-light: #FBFAF5;
+  --color-success: #2E6B4F;
+  --color-warning: #C98A1E;
+  --color-error: #D6472F;
+  --font-sans: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+html {
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +47,7 @@ html, body {
   height: 100%;
   background: var(--color-bg-100);
   color: var(--color-text-000);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -34,14 +59,24 @@ body {
   padding: 40px 20px;
 }
 
-/* ─── Container ──────────────────────────────────────────────── */
+::selection {
+  background: #DCE4FF;
+  color: #121517;
+}
+
+:focus-visible {
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
+}
+
+/* --- Container --- */
 
 .options-container {
   width: 100%;
   max-width: 580px;
 }
 
-/* ─── Header ─────────────────────────────────────────────────── */
+/* --- Header --- */
 
 .options-header {
   margin-bottom: 28px;
@@ -56,14 +91,14 @@ body {
 
 .options-header p {
   font-size: 13px;
-  color: var(--color-text-400);
+  color: var(--color-text-200);
 }
 
-/* ─── Provider card ──────────────────────────────────────────── */
+/* --- Provider card --- */
 
 .provider-section {
-  background: var(--color-bg-000);
-  border: 0.5px solid var(--color-border-100);
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border-100);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
@@ -75,7 +110,7 @@ body {
   color: var(--color-text-000);
   margin-bottom: 16px;
   padding-bottom: 10px;
-  border-bottom: 0.5px solid var(--color-border-100);
+  border-bottom: 1px solid var(--color-border-100);
 }
 
 .provider-section label {
@@ -83,9 +118,10 @@ body {
   margin-bottom: 14px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-text-400);
+  color: var(--color-text-200);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 .provider-section input {
@@ -93,24 +129,24 @@ body {
   width: 100%;
   margin-top: 6px;
   padding: 10px 12px;
-  background: var(--color-bg-200);
-  border: 0.5px solid var(--color-border-100);
-  border-radius: 8px;
+  background: var(--color-bg-000);
+  border: 1px solid var(--color-border-100);
+  border-radius: 6px;
   color: var(--color-text-000);
   font-size: 13px;
-  font-family: inherit;
-  outline: none;
+  font-family: "Archivo", "Segoe UI", system-ui, sans-serif;
   transition: border-color 0.15s;
 }
 
-.provider-section input:focus {
+.provider-section input:focus-visible {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 1px var(--color-brand);
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
 }
 
 .provider-section input::placeholder {
   color: var(--color-text-400);
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .provider-section select {
@@ -118,34 +154,60 @@ body {
   width: 100%;
   margin-top: 6px;
   padding: 10px 12px;
-  background: var(--color-bg-200);
-  border: 0.5px solid var(--color-border-100);
-  border-radius: 8px;
+  background-color: var(--color-bg-000);
+  border: 1px solid var(--color-border-100);
+  border-radius: 6px;
   color: var(--color-text-000);
   font-size: 13px;
-  font-family: inherit;
-  outline: none;
+  font-family: "Archivo", "Segoe UI", system-ui, sans-serif;
   transition: border-color 0.15s;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%23999' d='M213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%235B6165' d='M213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
 }
 
-.provider-section select:focus {
+.provider-section select:focus-visible {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 1px var(--color-brand);
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
 }
 
 .provider-section select option {
-  background: var(--color-bg-200);
+  background: var(--color-bg-000);
   color: var(--color-text-000);
 }
 
-/* ─── Test row ───────────────────────────────────────────────── */
+.provider-section textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--color-bg-000);
+  border: 1px solid var(--color-border-100);
+  border-radius: 6px;
+  color: var(--color-text-000);
+  font-size: 13px;
+  font-family: "Archivo", "Segoe UI", system-ui, sans-serif;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+
+.provider-section textarea:focus-visible {
+  border-color: var(--color-brand);
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
+}
+
+.provider-section textarea::placeholder {
+  color: var(--color-text-400);
+  opacity: 0.7;
+}
+
+/* --- Test row --- */
 
 .test-row {
   display: flex;
@@ -166,23 +228,24 @@ body {
   color: var(--color-error);
 }
 
-/* ─── Buttons ────────────────────────────────────────────────── */
+/* --- Buttons --- */
 
 .btn-test {
-  background: var(--color-bg-200);
+  background: var(--color-bg-000);
   color: var(--color-text-000);
-  border: 0.5px solid var(--color-border-100);
+  border: 1px solid var(--color-border-100);
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .btn-test:hover {
-  background: var(--color-border-100);
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand);
 }
 
 .btn-test:disabled {
@@ -192,10 +255,10 @@ body {
 
 .btn-save {
   background: var(--color-brand);
-  color: white;
-  border: none;
+  color: #FBFAF5;
+  border: 1px solid var(--color-brand);
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -204,15 +267,16 @@ body {
 }
 
 .btn-save:hover {
-  background: var(--color-brand-hover);
+  background: var(--color-brand-deep);
+  border-color: var(--color-brand-deep);
 }
 
 .btn-reset {
   background: transparent;
-  color: var(--color-text-400);
-  border: 0.5px solid var(--color-border-100);
+  color: var(--color-text-000);
+  border: 1px solid var(--color-border-100);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-family: inherit;
@@ -220,10 +284,10 @@ body {
 }
 
 .btn-reset:hover {
-  background: var(--color-border-100);
+  background: var(--color-surface);
 }
 
-/* ─── Actions row ────────────────────────────────────────────── */
+/* --- Actions row --- */
 
 .actions {
   display: flex;
@@ -238,7 +302,7 @@ body {
   font-weight: 500;
 }
 
-/* ─── Scrollbar ──────────────────────────────────────────────── */
+/* --- Scrollbar --- */
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -247,14 +311,14 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-200);
+  background: var(--color-border-100);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-border-300);
 }
 
-/* ─── Domain Lists ──────────────────────────────────────────── */
+/* --- Domain Lists --- */
 
 .domain-list {
   margin-bottom: 16px;
@@ -263,10 +327,11 @@ body {
 .domain-list h3 {
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-text-400);
+  color: var(--color-text-200);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-bottom: 8px;
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 .domain-list ul {
@@ -280,7 +345,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 6px 10px;
-  background: var(--color-bg-200);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-100);
   border-radius: 6px;
   margin-bottom: 4px;
   font-size: 13px;
@@ -289,17 +355,17 @@ body {
 
 .empty-list {
   font-size: 12px;
-  color: var(--color-text-400);
+  color: var(--color-text-200);
   font-style: italic;
   padding: 4px 0;
 }
 
 .btn-small {
   background: transparent;
-  color: var(--color-text-400);
-  border: 0.5px solid var(--color-border-100);
+  color: var(--color-text-200);
+  border: 1px solid var(--color-border-100);
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 11px;
   font-family: inherit;
@@ -307,7 +373,8 @@ body {
 }
 
 .btn-small:hover {
-  background: var(--color-border-100);
+  background: var(--color-surface);
+  color: var(--color-text-000);
 }
 
 .add-domain-row {
@@ -320,15 +387,25 @@ body {
 .add-domain-row input {
   flex: 1;
   padding: 8px 10px;
-  background: var(--color-bg-200);
-  border: 0.5px solid var(--color-border-100);
-  border-radius: 8px;
+  background: var(--color-bg-000);
+  border: 1px solid var(--color-border-100);
+  border-radius: 6px;
   color: var(--color-text-000);
   font-size: 13px;
   font-family: inherit;
-  outline: none;
 }
 
-.add-domain-row input:focus {
+.add-domain-row input:focus-visible {
   border-color: var(--color-brand);
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
 }
