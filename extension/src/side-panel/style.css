@@ -1,41 +1,44 @@
-/* ------------------------------------------------------------------ */
-/*  Browser Agent — Tailwind CSS v4 entry + Claude HSL theme           */
-/* ------------------------------------------------------------------ */
 @import "tailwindcss";
 
-/* ─── Claude Design System (Tailwind v4 theme) ─────────────────── */
-
 @theme {
-  /* Brand / Accent — Claude orange #D97757 */
-  --color-brand: hsl(15, 63.1%, 59.6%);
-  --color-brand-light: hsl(15, 63.1%, 65%);
-  --color-brand-dark: hsl(15, 54.2%, 51.2%);
-
-  /* Backgrounds */
-  --color-bg-000: hsl(60, 2.1%, 18.4%);   /* card bg (dark) */
-  --color-bg-100: hsl(60, 2.7%, 14.5%);   /* page bg (dark) */
-  --color-bg-200: hsl(30, 3.3%, 11.8%);   /* deeper bg */
-  --color-bg-300: hsl(60, 2.6%, 7.6%);    /* deepest */
-  --color-bg-400: hsl(0, 0%, 0%);         /* pure black */
-
-  /* Text */
-  --color-text-000: hsl(48, 33.3%, 97.1%); /* primary text */
-  --color-text-100: hsl(48, 33.3%, 97.1%);
-  --color-text-200: hsl(50, 9%, 73.7%);    /* secondary */
-  --color-text-300: hsl(50, 9%, 73.7%);
-  --color-text-400: hsl(48, 4.8%, 59.2%);  /* tertiary */
-
-  /* Borders */
-  --color-border-100: hsla(51, 16.5%, 84.5%, 0.15);
-  --color-border-200: hsla(51, 16.5%, 84.5%, 0.25);
-  --color-border-300: hsla(51, 16.5%, 84.5%, 0.35);
-
-  /* Surfaces / pictogram */
-  --color-surface: hsl(48, 3.4%, 29.2%);
-  --color-surface-light: hsl(60, 2.5%, 23.3%);
+  --color-chalk: #F3F0E7;
+  --color-paper: #FBFAF5;
+  --color-ink: #121517;
+  --color-graphite: #5B6165;
+  --color-silver: #DCD9CF;
+  --color-cobalt: #1E46E8;
+  --color-sky: #DCE4FF;
+  --color-moss: #2E6B4F;
+  --color-amber: #C98A1E;
+  --color-signal: #D6472F;
+  --color-brand: #1E46E8;
+  --color-brand-soft: #DCE4FF;
+  --color-brand-deep: #16349E;
+  --color-bg-000: #FBFAF5;
+  --color-bg-100: #FBFAF5;
+  --color-bg-200: #F3F0E7;
+  --color-bg-300: #E7E2D2;
+  --color-bg-400: #DCD9CF;
+  --color-text-000: #121517;
+  --color-text-100: #121517;
+  --color-text-200: #5B6165;
+  --color-text-300: #5B6165;
+  --color-text-400: #7C8286;
+  --color-border-100: #DCD9CF;
+  --color-border-200: #CFC9B8;
+  --color-border-300: #B3AC99;
+  --color-surface: #F3F0E7;
+  --color-surface-light: #FBFAF5;
+  --color-success: #2E6B4F;
+  --color-warning: #C98A1E;
+  --color-error: #D6472F;
+  --font-sans: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
-/* ─── Base styles ──────────────────────────────────────────────── */
+html {
+  color-scheme: light;
+}
 
 html, body {
   margin: 0;
@@ -43,9 +46,9 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--color-bg-100);
-  color: var(--color-text-000);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #FBFAF5;
+  color: #121517;
+  font-family: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -56,9 +59,19 @@ html, body {
   inset: 0;
   display: flex;
   flex-direction: column;
+  background: #FBFAF5;
+  color: #121517;
 }
 
-/* ─── Scrollbar ────────────────────────────────────────────────── */
+::selection {
+  background: #DCE4FF;
+  color: #121517;
+}
+
+:focus-visible {
+  outline: 2px solid #1E46E8;
+  outline-offset: 2px;
+}
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -67,14 +80,12 @@ html, body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-200);
+  background: #DCD9CF;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-300);
+  background: #B3AC99;
 }
-
-/* ─── Reasoning section ────────────────────────────────────────── */
 
 .ba-reasoning-section {
   margin: 8px 0;
@@ -86,7 +97,7 @@ html, body {
   gap: 4px;
   cursor: pointer;
   font-size: 12px;
-  color: var(--color-text-400);
+  color: #5B6165;
   background: none;
   border: none;
   padding: 2px 6px;
@@ -95,16 +106,17 @@ html, body {
 }
 
 .ba-reasoning-toggle:hover {
-  background: var(--color-border-100);
+  background: #F3F0E7;
 }
 
 .ba-reasoning-content {
   margin-top: 6px;
   padding: 8px 10px;
-  background: var(--color-bg-200);
+  background: #F3F0E7;
+  border: 1px solid #DCD9CF;
   border-radius: 6px;
   font-size: 12px;
-  color: var(--color-text-300);
+  color: #5B6165;
   white-space: pre-wrap;
   max-height: 200px;
   overflow-y: auto;
@@ -115,15 +127,19 @@ html, body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-400);
+  color: #5B6165;
   margin-bottom: 4px;
+}
+
+.ba-mono {
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 .ba-streaming-cursor {
   display: inline-block;
   width: 2px;
   height: 14px;
-  background: var(--color-brand);
+  background: #1E46E8;
   margin-left: 2px;
   animation: ba-blink 0.8s step-end infinite;
   vertical-align: text-bottom;
@@ -143,25 +159,25 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
-/* ─── Tool call button ─────────────────────────────────────────── */
-
 .ba-tool-call {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: var(--color-bg-200);
-  border: 0.5px solid var(--color-border-100);
+  background: #F3F0E7;
+  border: 1px solid #DCD9CF;
   border-radius: 6px;
   font-size: 12px;
-  color: var(--color-text-200);
+  color: #5B6165;
   cursor: pointer;
   transition: background 0.15s;
   margin: 2px 0;
 }
 
 .ba-tool-call:hover {
-  background: var(--color-border-100);
+  background: #DCE4FF;
+  border-color: #1E46E8;
+  color: #121517;
 }
 
 .ba-tool-call-icon {
@@ -169,8 +185,6 @@ html, body {
   height: 14px;
   flex-shrink: 0;
 }
-
-/* ─── Agent message avatar ─────────────────────────────────────── */
 
 .ba-avatar {
   width: 28px;
@@ -184,11 +198,11 @@ html, body {
 }
 
 .ba-avatar-agent {
-  background: var(--color-brand);
-  color: white;
+  background: #1E46E8;
+  color: #FBFAF5;
 }
 
 .ba-avatar-user {
-  background: var(--color-surface-light);
-  color: var(--color-text-000);
+  background: #DCE4FF;
+  color: #121517;
 }
