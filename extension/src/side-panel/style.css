@@ -306,3 +306,96 @@ textarea:focus-visible {
   outline: 2px solid #1E46E8;
   outline-offset: 2px;
 }
+
+/* ─── Wayfinding S3: rota + checkpoint ─────────────────────── */
+
+.ba-route {
+  background: transparent;
+}
+
+.ba-route-line {
+  background: #DCD9CF;
+}
+
+.ba-route-node--done {
+  background: #2E6B4F;
+  border-color: #2E6B4F;
+}
+
+.ba-route-node--now {
+  background: #1E46E8;
+  border-color: #1E46E8;
+  box-shadow: 0 0 0 4px #DCE4FF;
+}
+
+.ba-route-node--next {
+  background: transparent;
+  border-color: #DCD9CF;
+}
+
+.ba-route-node--error {
+  background: #D6472F;
+  border-color: #D6472F;
+  color: #FBFAF5;
+}
+
+.ba-route-node--auto {
+  background: #C98A1E;
+  border-color: #C98A1E;
+}
+
+.ba-checkpoint {
+  background: #F3F0E7;
+  border: 1px solid #DCD9CF;
+  border-left: 2px solid #1E46E8;
+  border-radius: 8px;
+}
+
+.ba-checkpoint-label {
+  font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5B6165;
+}
+
+.ba-btn-primary {
+  background: #1E46E8;
+  color: #FBFAF5;
+  border: 1px solid #1E46E8;
+  border-radius: 6px;
+}
+
+.ba-btn-ghost {
+  background: transparent;
+  color: #121517;
+  border: 1px solid #DCD9CF;
+  border-radius: 6px;
+}
+
+.ba-btn-deny {
+  background: #D6472F;
+  color: #FBFAF5;
+  border: 1px solid #D6472F;
+  border-radius: 6px;
+}
+
+.ba-route-status-done {
+  color: #2E6B4F;
+}
+
+.ba-route-status-now {
+  color: #1E46E8;
+}
+
+.ba-route-status-next {
+  color: #5B6165;
+}
+
+.ba-route-status-error {
+  color: #D6472F;
+}
+
+.ba-route-status-auto {
+  color: #C98A1E;
+}

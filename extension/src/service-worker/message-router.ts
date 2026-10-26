@@ -3,7 +3,7 @@ import { ProviderManager } from './provider-manager';
 import { executeTool } from './tools';
 import { tabGroupManager } from './tab-group';
 import { scheduledTaskManager } from './scheduled-tasks';
-import { handleChatSend } from './chat-handler';
+import { handleChatSend, getBaRouteStatus, getBaRouteLabel } from './chat-handler';
 import { handlePermission, forwardToActiveTab } from './permissions-handler';
 
 /** Abort controller for the currently running tool execution. */
@@ -131,6 +131,44 @@ export function registerMessageRouter() {
       case 'task:execute':
         scheduledTaskManager.execute(msg.taskId).then(() => sendResponse({ ok: true })).catch((err) => sendResponse({ error: err.message }));
         return true;
+
+      case 'route:status': {
+        try {
+          const route = getBaRouteStatus();
+          sendResponse({
+            status: route.status,
+            pausedStep: route.pausedStep,
+            totalSteps: route.totalSteps,
+            label: getBaRouteLabel(route.totalSteps),
+          });
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          sendResponse({ error: errMsg });
+        }
+        return false;
+      }
+
+      case 'route:continue':
+      case 'route:stop':
+        // Route continue/stop over onMessage is acknowledged here;
+        // the live checkpoint uses the chat-stream port (chat:routeContinue).
+        sendResponse({ ok: true, type: msg.type });
+        return false;
+
+      case 'checkpoint:status': {
+        try {
+          const route = getBaRouteStatus();
+          sendResponse({
+            checkpoint: route.status === 'paused',
+            pausedStep: route.pausedStep,
+            totalSteps: route.totalSteps,
+          });
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          sendResponse({ error: errMsg });
+        }
+        return false;
+      }
 
       case 'test:tool':
         executeTool(msg.name || 'tabs_context', msg.input || {}, msg.tabId).then(sendResponse).catch((err) => sendResponse({ error: err.message }));

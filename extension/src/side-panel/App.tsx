@@ -8,7 +8,7 @@ import { TaskManager } from './components/TaskManager';
 import { ContinuePrompt } from './components/ContinuePrompt';
 
 function AppInner() {
-  const { pendingPermission, respondPermission, hasNewModels, reloadModels } = useChat();
+  const { pendingPermission, respondPermission, hasNewModels, reloadModels, routeStatus, routePausedStep, routeTotalSteps } = useChat();
   const [showSettings, setShowSettings] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
 
@@ -31,6 +31,9 @@ function AppInner() {
     setShowTasks((prev) => !prev);
   }, []);
 
+  const routeLabel = routeTotalSteps > 0 ? `Rota ${routeTotalSteps} passos` : 'Rota';
+  const pausedLabel = routePausedStep !== null ? `Rota pausada no passo ${routePausedStep}.` : null;
+
   return (
     <>
       <div
@@ -38,15 +41,25 @@ function AppInner() {
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          background: 'var(--color-bg-100)',
+          background: '#FBFAF5',
         }}
+        data-route-status={routeStatus}
+        data-route-steps={routeTotalSteps}
       >
-        <Header 
-          onSettingsClick={handleSettingsClick} 
+        <Header
+          onSettingsClick={handleSettingsClick}
           onTasksClick={handleTasksClick}
           hasNewModels={hasNewModels}
           onReloadModels={reloadModels}
         />
+        <span
+          aria-live="polite"
+          data-testid="ba-route-status"
+          data-route-status={routeStatus}
+          style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}
+        >
+          {routeStatus === 'paused' && pausedLabel ? pausedLabel : routeLabel}
+        </span>
         <ChatWindow />
         <ChatInput />
       </div>

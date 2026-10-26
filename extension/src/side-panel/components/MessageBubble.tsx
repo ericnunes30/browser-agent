@@ -3,30 +3,6 @@ import type { DisplayMessage, ToolExecution } from '../ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { t } from '../../utils/i18n';
 
-/* ─── Tool Icons ─────────────────────────────────────────────── */
-const TOOL_ICONS: Record<string, string> = {
-  computer: '🖥️',
-  navigate: '🧭',
-  browser_batch: '⚡',
-  read_page: '📄',
-  get_page_text: '📄',
-  javascript_tool: '⚙️',
-  form_input: '📝',
-  screenshot: '📸',
-  tabs_context: '📑',
-  web_search: '🔍',
-  search: '🔍',
-  click: '👆',
-  type: '⌨️',
-  keypress: '🔑',
-  scroll: '📜',
-  wait: '⏳',
-};
-
-function getToolIcon(name: string): string {
-  return TOOL_ICONS[name] || TOOL_ICONS[name.split('_')[0]] || '🔧';
-}
-
 function getToolAction(execution: ToolExecution): string {
   const args = execution.args || {};
   if (execution.name === 'computer' && args.action) {
@@ -39,7 +15,7 @@ function getToolAction(execution: ToolExecution): string {
     return 'listing tabs';
   }
   if (execution.name === 'web_search' || execution.name === 'search') {
-    return args.query ? `「${String(args.query).slice(0, 30)}」` : 'searching';
+    return args.query ? `${String(args.query).slice(0, 30)}` : 'searching';
   }
   if (execution.name === 'screenshot') {
     return 'capturing screen';
@@ -48,7 +24,7 @@ function getToolAction(execution: ToolExecution): string {
     return `clicking ${String(args.selector).slice(0, 30)}`;
   }
   if (execution.name === 'type' && args.text) {
-    return `typing 「${String(args.text).slice(0, 25)}」`;
+    return `typing ${String(args.text).slice(0, 25)}`;
   }
   if (args.query || args.selector || args.url) {
     return String(args.query || args.selector || args.url || '').slice(0, 35);
@@ -56,86 +32,230 @@ function getToolAction(execution: ToolExecution): string {
   return '';
 }
 
-/* ─── Tool Execution Row ─────────────────────────────────────── */
-function ToolExecutionRow({ exec }: { exec: ToolExecution }) {
-  const isRunning = exec.status === 'running';
-  const isError = exec.status === 'error';
-  const icon = getToolIcon(exec.name);
-  const action = getToolAction(exec);
+type BaStepState = 'done' | 'now' | 'next' | 'error' | 'auto';
 
+function stepStateFor(exec: ToolExecution): BaStepState {
+  if (exec.status === 'error') return 'error';
+  if (exec.status === 'running') return 'now';
+  return 'done';
+}
+
+function stepLabelPT(state: BaStepState): string {
+  switch (state) {
+    case 'done':
+      return 'Concluído';
+    case 'now':
+      return 'Agora';
+    case 'next':
+      return 'Próximo';
+    case 'auto':
+      return 'Auto';
+    case 'error':
+      return 'Erro';
+  }
+}
+
+function RouteNode({ state }: { state: BaStepState }) {
+  const size = 12;
+  if (state === 'done') {
+    return (
+      <span
+        className="ba-route-node ba-route-node--done"
+        aria-hidden="true"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: '#2E6B4F',
+          border: '2px solid #2E6B4F',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <svg width="7" height="7" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+          <path d="M1.5 4.2 3.3 6 6.5 2.2" stroke="#FBFAF5" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+  if (state === 'now') {
+    return (
+      <span
+        className="ba-route-node ba-route-node--now"
+        aria-hidden="true"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: '#1E46E8',
+          border: '2px solid #1E46E8',
+          boxShadow: '0 0 0 4px #DCE4FF',
+          display: 'inline-flex',
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+  if (state === 'error') {
+    return (
+      <span
+        className="ba-route-node ba-route-node--error"
+        aria-hidden="true"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: '#D6472F',
+          border: '2px solid #D6472F',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          color: '#FBFAF5',
+          fontSize: 8,
+          fontWeight: 700,
+          lineHeight: 1,
+        }}
+      >
+        !
+      </span>
+    );
+  }
+  if (state === 'auto') {
+    return (
+      <span
+        className="ba-route-node ba-route-node--auto"
+        aria-hidden="true"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: '#C98A1E',
+          border: '2px solid #C98A1E',
+          display: 'inline-flex',
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
   return (
-    <div
+    <span
+      className="ba-route-node ba-route-node--next"
+      aria-hidden="true"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '6px 10px',
-        borderRadius: 8,
-        fontSize: 12,
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: 'transparent',
+        border: '2px solid #DCD9CF',
+        display: 'inline-flex',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function StatusChip({ state }: { state: BaStepState }) {
+  const palette: Record<BaStepState, { bg: string; color: string; border: string }> = {
+    done: { bg: '#F3F0E7', color: '#2E6B4F', border: '#DCD9CF' },
+    now: { bg: '#DCE4FF', color: '#1E46E8', border: '#1E46E8' },
+    next: { bg: 'transparent', color: '#5B6165', border: '#DCD9CF' },
+    error: { bg: '#F3F0E7', color: '#D6472F', border: '#D6472F' },
+    auto: { bg: '#F3F0E7', color: '#C98A1E', border: '#C98A1E' },
+  };
+  const p = palette[state];
+  return (
+    <span
+      style={{
+        fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, monospace',
+        fontSize: 10,
         fontWeight: 500,
-        background: isError
-          ? 'rgba(239, 68, 68, 0.1)'
-          : isRunning
-            ? 'var(--color-bg-300)'
-            : 'rgba(34, 197, 94, 0.08)',
-        border: `1px solid ${isError
-          ? 'rgba(239, 68, 68, 0.3)'
-          : isRunning
-            ? 'var(--color-border-200)'
-            : 'rgba(34, 197, 94, 0.2)'}`,
-        color: isError ? '#ef4444' : 'var(--color-text-200)',
-        transition: 'all 0.3s ease',
-        maxWidth: '100%',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        background: p.bg,
+        color: p.color,
+        border: `1px solid ${p.border}`,
+        borderRadius: 4,
+        padding: '1px 6px',
+        whiteSpace: 'nowrap',
       }}
     >
-      <span style={{ fontSize: 14 }}>{icon}</span>
-      <span style={{ fontWeight: 600 }}>{exec.name}</span>
-      {action && (
-        <>
-          <span style={{ opacity: 0.3, margin: '0 2px' }}>·</span>
-          <span style={{
-            opacity: 0.85,
-            maxWidth: 200,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
+      {stepLabelPT(state)}
+    </span>
+  );
+}
+
+/* ─── Tool Execution Row — wayfinding route step ─────────────── */
+function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boolean }) {
+  const state = stepStateFor(exec);
+  const action = getToolAction(exec);
+  const isError = state === 'error';
+  const isNow = state === 'now';
+
+  return (
+    <div style={{ display: 'flex', gap: 10, position: 'relative' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
+        <RouteNode state={state} />
+        {!isLast && (
+          <span
+            className="ba-route-line"
+            aria-hidden="true"
+            style={{ width: 2, flex: 1, minHeight: 14, background: '#DCD9CF', marginTop: 4, marginBottom: -2 }}
+          />
+        )}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          padding: '6px 10px',
+          marginBottom: isLast ? 0 : 8,
+          borderRadius: 6,
+          fontSize: 12,
+          background: isError ? '#F3F0E7' : isNow ? '#FBFAF5' : '#FBFAF5',
+          border: `1px solid ${isError ? '#D6472F' : isNow ? '#1E46E8' : '#DCD9CF'}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span style={{ fontWeight: 600, color: isError ? '#D6472F' : '#121517' }}>{exec.name}</span>
+        {action && (
+          <span
+            style={{
+              opacity: 0.85,
+              maxWidth: 220,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: '#5B6165',
+            }}
+          >
             {action}
           </span>
-        </>
-      )}
-      {isRunning && (
-        <span
-          className="ba-tool-spinner"
-          style={{
-            width: 12,
-            height: 12,
-            border: '1.5px solid var(--color-border-200)',
-            borderTopColor: 'var(--color-brand)',
-            borderRadius: '50%',
-            animation: 'ba-spin 0.8s linear infinite',
-            marginLeft: 'auto',
-            flexShrink: 0,
-          }}
-        />
-      )}
-      {isError && (
-        <span style={{ marginLeft: 'auto', fontSize: 11 }}>⚠️</span>
-      )}
-      {!isRunning && !isError && (
-        <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>✓</span>
-      )}
+        )}
+        <span style={{ marginLeft: 'auto' }}>
+          <StatusChip state={state} />
+        </span>
+      </div>
     </div>
   );
 }
 
-/* ─── Tool Message Bubble ────────────────────────────────────── */
+/* ─── Tool Message Bubble — Rota N passos ────────────────────── */
 function ToolMessageBubble({ message }: { message: DisplayMessage }) {
   const execs = message.toolExecutions || [];
   const isRunning = message.streaming;
+  const hasError = execs.some((e) => e.status === 'error');
+  const total = execs.length;
+  const headerState: BaStepState = hasError ? 'error' : isRunning ? 'now' : 'done';
 
   return (
     <div
+      className="ba-route"
       style={{
         display: 'flex',
         flexDirection: 'row',
@@ -145,7 +265,6 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
         padding: '4px 0',
       }}
     >
-      {/* Tool icon avatar */}
       <div
         style={{
           width: 28,
@@ -155,48 +274,77 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          fontSize: 14,
-          background: 'var(--color-bg-300)',
-          color: 'var(--color-text-300)',
-          border: '1px solid var(--color-border-200)',
+          background: '#DCE4FF',
+          color: '#1E46E8',
+          border: '1px solid #DCD9CF',
         }}
+        aria-hidden="true"
       >
-        🔧
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M10.5 5 L10.5 21.2 L14.55 17.6 L17.25 24.35 L20.4 23.1 L17.7 16.7 L22.8 16.7 Z" fill="#1E46E8" />
+        </svg>
       </div>
 
       <div style={{ maxWidth: '88%', minWidth: 0, flex: 1 }}>
-        {/* Label */}
         <div
           style={{
-            fontSize: 10,
-            fontWeight: 600,
+            fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, monospace',
+            fontSize: 11,
+            fontWeight: 500,
             textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: 'var(--color-text-400)',
-            marginBottom: 4,
+            letterSpacing: '0.08em',
+            color: '#5B6165',
+            marginBottom: 6,
             paddingLeft: 4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
           }}
         >
-          Tool
-          {isRunning && (
-            <span style={{ marginLeft: 6, opacity: 0.5, fontSize: 9 }}>●</span>
-          )}
+          <span>{total > 0 ? `Rota ${total} passos` : 'Rota'}</span>
+          <StatusChip state={headerState} />
         </div>
 
         <div
           style={{
-            borderRadius: 10,
-            background: 'var(--color-bg-200)',
-            border: '0.5px solid var(--color-border-100)',
-            padding: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
+            borderRadius: 8,
+            background: '#FBFAF5',
+            border: '1px solid #DCD9CF',
+            padding: 10,
           }}
         >
-          {execs.map((exec) => (
-            <ToolExecutionRow key={exec.id} exec={exec} />
+          {execs.map((exec, idx) => (
+            <ToolExecutionRow key={exec.id} exec={exec} isLast={idx === execs.length - 1 && !isRunning} />
           ))}
+          {isRunning && (
+            <div style={{ display: 'flex', gap: 10, position: 'relative', marginTop: execs.length > 0 ? 0 : 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
+                <RouteNode state="next" />
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  background: 'transparent',
+                  border: '1px dashed #DCD9CF',
+                  color: '#5B6165',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <span style={{ flex: 1 }}>Próximo</span>
+                <StatusChip state="next" />
+              </div>
+            </div>
+          )}
+          {total === 0 && !isRunning && (
+            <div style={{ fontSize: 12, color: '#5B6165' }}>Rota vazia</div>
+          )}
         </div>
       </div>
     </div>
@@ -222,7 +370,6 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
         padding: '4px 0',
       }}
     >
-      {/* Avatar */}
       <div
         style={{
           width: 28,
@@ -232,38 +379,36 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          fontSize: 14,
-          background: 'var(--color-brand)',
-          color: 'white',
+          background: '#1E46E8',
+          color: '#FBFAF5',
         }}
+        aria-hidden="true"
       >
-        🤖
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M10.5 5 L10.5 21.2 L14.55 17.6 L17.25 24.35 L20.4 23.1 L17.7 16.7 L22.8 16.7 Z" fill="#F3F0E7" />
+        </svg>
       </div>
 
       <div style={{ maxWidth: '88%', minWidth: 0, flex: 1 }}>
-        {/* Label */}
         <div
           style={{
             fontSize: 10,
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
-            color: 'var(--color-text-400)',
+            color: '#5B6165',
             marginBottom: 4,
             paddingLeft: 4,
           }}
         >
           {t('agent_label')}
-          {isStreaming && !isThinking && (
-            <span style={{ marginLeft: 6, opacity: 0.5, fontSize: 9 }}>●</span>
-          )}
         </div>
 
         <div
           style={{
             borderRadius: 14,
-            background: 'var(--color-bg-200)',
-            border: '0.5px solid var(--color-border-100)',
+            background: '#F3F0E7',
+            border: '1px solid #DCD9CF',
             overflow: 'hidden',
           }}
         >
@@ -274,7 +419,7 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                color: 'var(--color-text-300)',
+                color: '#5B6165',
                 fontSize: 13,
               }}
             >
@@ -283,10 +428,9 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
                 style={{
                   width: 14,
                   height: 14,
-                  border: '2px solid var(--color-border-200)',
-                  borderTopColor: 'var(--color-brand)',
+                  border: '2px solid #DCD9CF',
+                  borderTopColor: '#1E46E8',
                   borderRadius: '50%',
-                  animation: 'ba-spin 1s linear infinite',
                   flexShrink: 0,
                 }}
               />
@@ -294,12 +438,11 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
             </div>
           ) : (
             <>
-              {/* Reasoning Section (collapsible, at top) */}
               {hasReasoning && (
                 <div
                   style={{
-                    borderBottom: hasContent ? '1px solid var(--color-border-100)' : 'none',
-                    background: 'rgba(0,0,0,0.02)',
+                    borderBottom: hasContent ? '1px solid #DCD9CF' : 'none',
+                    background: '#FBFAF5',
                   }}
                 >
                   <button
@@ -312,7 +455,7 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
                       padding: '8px 14px',
                       fontSize: 11,
                       fontWeight: 500,
-                      color: 'var(--color-text-400)',
+                      color: '#5B6165',
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
@@ -330,21 +473,16 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
                         flexShrink: 0,
                       }}
                     >
-                      <path d="M6 4l4 4-4 4" />
+                      <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" />
                     </svg>
                     {showReasoning ? t('reasoning_hide') : t('reasoning_label')}
-                    <span style={{ marginLeft: 'auto', opacity: 0.5, fontSize: 10 }}>
-                      {message.reasoning!.length > 200
-                        ? `${message.reasoning!.slice(0, 200).trim()}...`
-                        : message.reasoning}
-                    </span>
                   </button>
                   {showReasoning && (
                     <div
                       style={{
                         padding: '0 14px 10px',
                         fontSize: 12,
-                        color: 'var(--color-text-300)',
+                        color: '#5B6165',
                         lineHeight: 1.6,
                         whiteSpace: 'pre-wrap',
                         maxHeight: 400,
@@ -357,7 +495,6 @@ function AssistantMessageBubble({ message }: { message: DisplayMessage }) {
                 </div>
               )}
 
-              {/* Content with Markdown */}
               <div style={{ padding: hasContent ? '10px 14px 12px' : '0' }}>
                 {hasContent ? (
                   <MarkdownRenderer content={message.content} />
@@ -395,12 +532,14 @@ function UserMessageBubble({ message }: { message: DisplayMessage }) {
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          fontSize: 14,
-          background: 'var(--color-surface-light)',
-          color: 'var(--color-text-000)',
+          fontSize: 12,
+          fontWeight: 700,
+          background: '#DCE4FF',
+          color: '#121517',
         }}
+        aria-hidden="true"
       >
-        👤
+        V
       </div>
 
       <div style={{ maxWidth: '88%', minWidth: 0 }}>
@@ -410,7 +549,7 @@ function UserMessageBubble({ message }: { message: DisplayMessage }) {
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
-            color: 'var(--color-text-400)',
+            color: '#5B6165',
             marginBottom: 4,
             paddingRight: 4,
             textAlign: 'right',
@@ -423,9 +562,9 @@ function UserMessageBubble({ message }: { message: DisplayMessage }) {
           style={{
             padding: '8px 12px',
             borderRadius: 14,
-            background: 'var(--color-bg-000)',
-            border: '0.5px solid var(--color-border-100)',
-            color: 'var(--color-text-000)',
+            background: '#FBFAF5',
+            border: '1px solid #DCD9CF',
+            color: '#121517',
             fontSize: 13,
             lineHeight: 1.5,
             whiteSpace: 'pre-wrap',
@@ -435,7 +574,6 @@ function UserMessageBubble({ message }: { message: DisplayMessage }) {
           {message.content}
         </div>
 
-        {/* Image attachments */}
         {message.attachments && message.attachments.length > 0 && (
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {message.attachments.map((att) => (
@@ -448,7 +586,7 @@ function UserMessageBubble({ message }: { message: DisplayMessage }) {
                   maxHeight: 150,
                   borderRadius: 8,
                   objectFit: 'cover',
-                  border: '1px solid var(--color-border-200)',
+                  border: '1px solid #DCD9CF',
                 }}
               />
             ))}

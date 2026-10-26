@@ -15,7 +15,9 @@ export interface StreamCallbacks {
   onToolEnd: (name: string, result?: string, error?: string) => void;
   onDone: (content: string, reasoning?: string) => void;
   onError: (error: string) => void;
-  onContinuePrompt?: () => void;
+  onContinuePrompt?: (step?: number) => void;
+  onRoutePaused?: (step: number) => void;
+  onRouteUpdate?: (step: number) => void;
 }
 
 export class ChatStream {
@@ -42,6 +44,7 @@ export class ChatStream {
 
     let accumulatedText = '';
     let accumulatedReasoning = '';
+    let accumulatedRouteSteps = 0;
 
     // Detect disconnection before any message is received (SW shutdown/restart)
     this.port.onDisconnect.addListener(() => {
@@ -65,16 +68,28 @@ export class ChatStream {
           break;
 
         case 'chat:toolStart':
+          accumulatedRouteSteps += 1;
           callbacks.onToolStart(msg.name, msg.args);
+          callbacks.onRouteUpdate?.(accumulatedRouteSteps);
           break;
 
         case 'chat:toolEnd':
           callbacks.onToolEnd(msg.name, msg.result, msg.error);
           break;
 
-        case 'chat:continuePrompt':
-          callbacks.onContinuePrompt?.();
+        case 'chat:routePaused': {
+          const step = typeof msg.step === 'number' ? msg.step : 0;
+          callbacks.onRoutePaused?.(step);
+          callbacks.onContinuePrompt?.(step);
           break;
+        }
+
+        case 'chat:continuePrompt': {
+          const step = typeof msg.step === 'number' ? msg.step : 0;
+          callbacks.onRoutePaused?.(step);
+          callbacks.onContinuePrompt?.(step);
+          break;
+        }
 
         case 'chat:result':
           callbacks.onDone(accumulatedText, accumulatedReasoning || undefined);
@@ -98,11 +113,16 @@ export class ChatStream {
     });
   }
 
-  /** Respond to a continue prompt from the service worker. */
+  /** Respond to a continue / route checkpoint prompt from the service worker. */
   respondContinue(shouldContinue: boolean): void {
     if (this.port) {
       this.port.postMessage({ type: 'chat:continueResponse', continue: shouldContinue });
     }
+  }
+
+  /** Alias for the wayfinding route checkpoint (same channel). */
+  respondRouteContinue(shouldContinue: boolean): void {
+    this.respondContinue(shouldContinue);
   }
 
   stop(): void {

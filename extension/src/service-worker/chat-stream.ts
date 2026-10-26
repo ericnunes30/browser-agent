@@ -1,5 +1,5 @@
 /* ─── Port-based streaming (Side Panel ↔ Service Worker) ──────── */
-import { sendChatPrompt, getAdapterTools } from './chat-handler';
+import { sendChatPrompt, getAdapterTools, MAX_TOOL_ITERATIONS as MAX_ROUTE_STEPS } from './chat-handler';
 import {
   getCachedActiveTabId,
   setCachedActiveTabId,
@@ -132,13 +132,18 @@ export async function handleChatStream(port: chrome.runtime.Port) {
               },
             },
             streamTabId ?? undefined,
-            // onContinuePrompt: ask user via port
-            async (): Promise<boolean> => {
+            // onContinuePrompt: checkpoint pause — ask user via port with step
+            async (pausedStep: number): Promise<boolean> => {
               if (disposed) return false;
-              port.postMessage({ type: 'chat:continuePrompt' });
+              const step = typeof pausedStep === 'number' && pausedStep > 0 ? pausedStep : MAX_ROUTE_STEPS;
+              port.postMessage({ type: 'chat:routePaused', step });
+              port.postMessage({ type: 'chat:continuePrompt', step });
               return new Promise<boolean>((resolve) => {
                 const handler = (msg: any) => {
                   if (msg.type === 'chat:continueResponse') {
+                    port.onMessage.removeListener(handler);
+                    resolve(msg.continue === true);
+                  } else if (msg.type === 'chat:routeContinue') {
                     port.onMessage.removeListener(handler);
                     resolve(msg.continue === true);
                   }
@@ -156,7 +161,8 @@ export async function handleChatStream(port: chrome.runtime.Port) {
         break;
       }
 
-      case 'chat:stop': {
+      case 'chat:stop':
+      case 'route:stop': {
         dispose();
         break;
       }

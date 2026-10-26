@@ -46,7 +46,42 @@ export function getAdapterTools(): AdapterToolDefinition[] {
 }
 
 /** Maximum number of tool-call iterations before asking user to continue. */
-const MAX_TOOL_ITERATIONS = 10;
+export const MAX_TOOL_ITERATIONS = 10;
+
+/* ─── Route state — wayfinding S3: rota + checkpoint ──────────── */
+
+export type BaRouteStatus = 'idle' | 'running' | 'paused' | 'done';
+
+export interface BaRouteState {
+  status: BaRouteStatus;
+  pausedStep: number | null;
+  totalSteps: number;
+}
+
+/** In-memory route state for the current/last chat turn (SW scope). */
+export const baRouteState: BaRouteState = {
+  status: 'idle',
+  pausedStep: null,
+  totalSteps: 0,
+};
+
+export function getBaRouteStatus(): BaRouteState {
+  return { ...baRouteState };
+}
+
+export function getBaRouteLabel(total: number): string {
+  return `Rota ${total} passos`;
+}
+
+export function getBaRoutePausedLabel(step: number): string {
+  return `Rota pausada no passo ${step}.`;
+}
+
+function setBaRoute(next: Partial<BaRouteState>): void {
+  if (next.status !== undefined) baRouteState.status = next.status;
+  if (next.pausedStep !== undefined) baRouteState.pausedStep = next.pausedStep;
+  if (next.totalSteps !== undefined) baRouteState.totalSteps = next.totalSteps;
+}
 
 /**
  * Send a prompt through the active provider using ProviderManager.
@@ -65,7 +100,7 @@ export async function sendChatPrompt(
   params: PromptParams,
   callbacks: StreamCallbacks,
   tabId?: number,
-  onContinuePrompt?: () => Promise<boolean>,
+  onContinuePrompt?: (step: number) => Promise<boolean>,
 ): Promise<void> {
   const manager = ProviderManager.getInstance();
   const active = await manager.getActiveProvider();
@@ -84,22 +119,29 @@ export async function sendChatPrompt(
 
   let currentMessages = [...params.messages];
   let iteration = 0;
+  let totalToolSteps = 0;
+  setBaRoute({ status: 'running', pausedStep: null, totalSteps: 0 });
 
   while (true) {
-    // Check iteration limit — ask user to continue or stop
+    // Check iteration limit — checkpoint pause: ask user to continue or stop
     if (iteration >= MAX_TOOL_ITERATIONS) {
+      const pausedStep = totalToolSteps > 0 ? totalToolSteps : iteration;
+      setBaRoute({ status: 'paused', pausedStep, totalSteps: totalToolSteps });
       if (onContinuePrompt) {
-        const shouldContinue = await onContinuePrompt();
+        const shouldContinue = await onContinuePrompt(pausedStep);
         if (shouldContinue) {
           iteration = 0;
+          setBaRoute({ status: 'running', pausedStep: null });
           // Continue the loop
         } else {
           // User chose to stop — text already streamed in real-time
+          setBaRoute({ status: 'done' });
           callbacks.onDone();
           return;
         }
       } else {
         // No continue prompt available — stop
+        setBaRoute({ status: 'done' });
         callbacks.onDone();
         return;
       }
@@ -148,15 +190,20 @@ export async function sendChatPrompt(
     );
 
     if (errorContent) {
+      setBaRoute({ status: 'done' });
       callbacks.onDone();
       return;
     }
 
     // No tool calls → final answer is ready
     if (toolCalls.length === 0) {
+      setBaRoute({ status: 'done' });
       callbacks.onDone();
       return;
     }
+
+    totalToolSteps += toolCalls.length;
+    setBaRoute({ totalSteps: totalToolSteps });
 
     // --- Tool loop iteration ---
     // Execute each tool and collect results

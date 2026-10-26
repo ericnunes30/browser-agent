@@ -37,6 +37,10 @@ export function PermissionPrompt({ request, onResponse, onDismiss }: PermissionP
 
   const handleAllowOnce = () => {
     if (!request) return;
+    if (forAllChats) {
+      handleAllow();
+      return;
+    }
     setState('approved');
     onResponse(request.domain, 'allow_once', false);
     setTimeout(() => setState('hidden'), 1500);
@@ -52,69 +56,153 @@ export function PermissionPrompt({ request, onResponse, onDismiss }: PermissionP
   if (state === 'hidden' || !request) return null;
 
   const overlay: React.CSSProperties = {
-    position: 'fixed', inset: 0, zIndex: 2147483647,
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    position: 'fixed',
+    inset: 0,
+    zIndex: 2147483647,
+    background: 'rgba(18, 21, 23, 0.32)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
   };
 
   const card: React.CSSProperties = {
-    background: 'var(--color-bg-000, #2e2e2c)',
-    borderRadius: '12px',
-    padding: '24px',
-    maxWidth: '400px',
-    width: '90%',
-    border: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+    background: '#F3F0E7',
+    borderRadius: 8,
+    padding: '20px 20px 16px',
+    maxWidth: 400,
+    width: '100%',
+    border: '1px solid #DCD9CF',
+    borderLeft: '2px solid #1E46E8',
+    boxShadow: '0 18px 40px rgba(18, 21, 23, 0.14)',
+  };
+
+  const labelMono: React.CSSProperties = {
+    fontFamily: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace',
+    fontSize: 11,
+    fontWeight: 500,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: '#5B6165',
+    marginBottom: 8,
+  };
+
+  const title: React.CSSProperties = {
+    margin: 0,
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#121517',
+    fontFamily: '"Archivo", "Segoe UI", system-ui, -apple-system, sans-serif',
+  };
+
+  const body: React.CSSProperties = {
+    fontSize: 13,
+    color: '#5B6165',
+    margin: '8px 0 12px',
+    lineHeight: 1.5,
+    fontFamily: '"Archivo", "Segoe UI", system-ui, -apple-system, sans-serif',
   };
 
   const btnBase: React.CSSProperties = {
-    padding: '8px 16px',
-    borderRadius: '8px',
-    border: 'none',
+    padding: '8px 14px',
+    borderRadius: 6,
     cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: 13,
     fontWeight: 600,
-    fontFamily: 'inherit',
+    fontFamily: '"Archivo", "Segoe UI", system-ui, -apple-system, sans-serif',
+  };
+
+  const btnAllowOnce: React.CSSProperties = {
+    ...btnBase,
+    background: '#1E46E8',
+    color: '#FBFAF5',
+    border: '1px solid #1E46E8',
+  };
+
+  const btnGhost: React.CSSProperties = {
+    ...btnBase,
+    background: 'transparent',
+    color: '#121517',
+    border: '1px solid #DCD9CF',
+  };
+
+  const btnDeny: React.CSSProperties = {
+    ...btnBase,
+    background: '#D6472F',
+    color: '#FBFAF5',
+    border: '1px solid #D6472F',
   };
 
   return (
-    <div style={overlay} onClick={onDismiss}>
-      <div style={card} onClick={e => e.stopPropagation()}>
+    <div style={overlay} onClick={onDismiss} role="dialog" aria-modal="true" aria-label="Checkpoint">
+      <div style={card} onClick={(e) => e.stopPropagation()} className="ba-checkpoint">
         {state === 'requesting' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 20 }}>🔒</span>
-              <h3 style={{ margin: 0, fontSize: 15, color: 'var(--color-text-000, #f7f6f3)' }}>Permission required</h3>
+            <div style={labelMono} className="ba-mono">
+              Checkpoint
             </div>
-            <p style={{ fontSize: 13, color: 'var(--color-text-200, #cccbc4)', marginBottom: 16, lineHeight: 1.5 }}>
-              The agent wants to <strong>{request.action}</strong> on <strong>{request.domain}</strong>
-              {request.toolName ? <> using <strong>{request.toolName}</strong></> : null}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path
+                  d="M8 1.5 9.8 4.6 13.2 5.1 10.7 7.5 11.3 10.9 8 9.2 4.7 10.9 5.3 7.5 2.8 5.1 6.2 4.6 8 1.5Z"
+                  stroke="#1E46E8"
+                  strokeWidth="1.4"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <h3 style={title}>Pausado aguardando sua confirmação</h3>
+            </div>
+            <p style={body}>
+              O agente quer <strong style={{ color: '#121517' }}>{request.action}</strong> em{' '}
+              <strong style={{ color: '#121517' }}>{request.domain}</strong>
+              {request.toolName ? (
+                <>
+                  {' '}usando <strong style={{ color: '#121517' }}>{request.toolName}</strong>
+                </>
+              ) : null}
             </p>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, color: 'var(--color-text-400, #9c9b91)', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  fontSize: 12,
+                  color: '#5B6165',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                  fontFamily: '"Archivo", "Segoe UI", system-ui, -apple-system, sans-serif',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={forAllChats}
-                  onChange={e => setForAllChats(e.target.checked)}
+                  onChange={(e) => setForAllChats(e.target.checked)}
+                  style={{ accentColor: '#1E46E8' }}
                 />
-                Allow for all chats
+                Sempre permitir
               </label>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button style={{ ...btnBase, background: 'var(--color-bg-200, #1f1f1d)', color: 'var(--color-text-000, #f7f6f3)' }} onClick={handleDeny}>Deny</button>
-              <button style={{ ...btnBase, background: 'var(--color-bg-200, #1f1f1d)', color: 'var(--color-text-000, #f7f6f3)' }} onClick={handleAllowOnce}>Allow once</button>
-              <button style={{ ...btnBase, background: 'var(--color-brand, #d97757)', color: 'white' }} onClick={handleAllow}>Allow</button>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button type="button" style={btnDeny} onClick={handleDeny} className="ba-btn-deny">
+                Negar
+              </button>
+              <button type="button" style={btnGhost} onClick={onDismiss} className="ba-btn-ghost">
+                Agora não
+              </button>
+              <button type="button" style={btnAllowOnce} onClick={handleAllowOnce} className="ba-btn-primary">
+                Permitir uma vez
+              </button>
             </div>
           </>
         )}
         {state === 'approved' && (
-          <div style={{ textAlign: 'center', padding: 16, color: 'var(--color-success, #6b9f6b)' }}>
-            ✓ Allowed
+          <div style={{ textAlign: 'center', padding: 16, color: '#2E6B4F', fontWeight: 600 }}>
+            Permitido
           </div>
         )}
         {state === 'denied' && (
-          <div style={{ textAlign: 'center', padding: 16, color: 'var(--color-error, #c95a5a)' }}>
-            ✗ Denied
+          <div style={{ textAlign: 'center', padding: 16, color: '#D6472F', fontWeight: 600 }}>
+            Negado
           </div>
         )}
       </div>

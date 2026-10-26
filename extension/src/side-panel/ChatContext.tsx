@@ -38,6 +38,8 @@ export interface DisplayMessage {
 
 export type PermissionMode = 'follow_a_plan' | 'skip_all_permission_checks';
 
+export type BaRouteStatus = 'idle' | 'running' | 'paused' | 'done';
+
 interface ChatContextValue {
   messages: DisplayMessage[];
   sendMessage: (text: string, attachments?: ImageAttachment[]) => Promise<void>;
@@ -56,6 +58,9 @@ interface ChatContextValue {
   providers: Array<{ id: string; name: string; models: string[] }>;
   showContinuePrompt: boolean;
   respondContinue: (shouldContinue: boolean) => void;
+  routePausedStep: number | null;
+  routeTotalSteps: number;
+  routeStatus: BaRouteStatus;
 }
 
 const ChatCtx = createContext<ChatContextValue>(null!);
@@ -75,9 +80,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [hasNewModels, setHasNewModels] = useState(false);
   const [providers, setProviders] = useState<Array<{ id: string; name: string; models: string[] }>>([]);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [routePausedStep, setRoutePausedStep] = useState<number | null>(null);
+  const [routeTotalSteps, setRouteTotalSteps] = useState(0);
+  const [routeStatus, setRouteStatus] = useState<BaRouteStatus>('idle');
   const messagesRef = useRef<DisplayMessage[]>([]);
   const chatStreamRef = useRef<ChatStream | null>(null);
   const currentAssistantIdRef = useRef<string>('');
+  const routeStepCountRef = useRef(0);
 
   // Load provider/model from storage on mount
   useEffect(() => {
@@ -243,6 +252,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const clearConversation = useCallback(() => {
     setMessages([]);
     messagesRef.current = [];
+    routeStepCountRef.current = 0;
+    setRouteTotalSteps(0);
+    setRoutePausedStep(null);
+    setRouteStatus('idle');
+    setShowContinuePrompt(false);
   }, []);
 
   const setProvider = useCallback((id: string, model: string) => {
@@ -260,6 +274,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     async (text: string, attachments?: ImageAttachment[]) => {
       if (isStreaming) return;
       setIsStreaming(true);
+      routeStepCountRef.current = 0;
+      setRouteTotalSteps(0);
+      setRoutePausedStep(null);
+      setRouteStatus('running');
+      setShowContinuePrompt(false);
 
       // Add user message (with attachments if any)
       const userMsg: DisplayMessage = {
@@ -293,6 +312,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (!activeProvider || !activeModel) {
         updateMessage(assistantMsg.id, 'No provider/model selected. Open options.');
         setIsStreaming(false);
+        setRouteStatus('done');
         return;
       }
 
@@ -383,6 +403,8 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
           });
         },
         onToolStart: (name: string, args?: Record<string, unknown>) => {
+          routeStepCountRef.current += 1;
+          setRouteTotalSteps(routeStepCountRef.current);
           // 1. Freeze current assistant message (remove streaming)
           const frozenId = currentAssistantIdRef.current;
           if (frozenId) {
@@ -459,8 +481,21 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
             return updated;
           });
         },
-        onContinuePrompt: () => {
+        onContinuePrompt: (step?: number) => {
+          const pausedStep =
+            typeof step === 'number' && step > 0 ? step : routeStepCountRef.current;
+          setRoutePausedStep(pausedStep > 0 ? pausedStep : null);
+          setRouteStatus('paused');
           setShowContinuePrompt(true);
+        },
+        onRoutePaused: (step: number) => {
+          const pausedStep = step > 0 ? step : routeStepCountRef.current;
+          setRoutePausedStep(pausedStep > 0 ? pausedStep : null);
+          setRouteStatus('paused');
+          setShowContinuePrompt(true);
+        },
+        onRouteUpdate: (step: number) => {
+          if (step > 0) setRouteTotalSteps(step);
         },
         onDone: (content: string, reasoning?: string) => {
           const targetId = currentAssistantIdRef.current;
@@ -468,6 +503,7 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
             updateMessage(targetId, content, reasoning);
           }
           setIsStreaming(false);
+          setRouteStatus('done');
           chatStreamRef.current = null;
           currentAssistantIdRef.current = '';
         },
@@ -477,6 +513,7 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
             updateMessage(targetId, `Error: ${error}`);
           }
           setIsStreaming(false);
+          setRouteStatus('done');
           chatStreamRef.current = null;
           currentAssistantIdRef.current = '';
         },
@@ -507,6 +544,9 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
     chatStreamRef.current?.stop();
     chatStreamRef.current = null;
     setIsStreaming(false);
+    setRouteStatus('done');
+    setShowContinuePrompt(false);
+    setRoutePausedStep(null);
     setMessages((prev) => {
       const updated = prev.map((m) => (m.streaming ? { ...m, content: '(stopped)', streaming: false } : m));
       messagesRef.current = updated;
@@ -516,6 +556,8 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
 
   const respondContinue = useCallback((shouldContinue: boolean) => {
     setShowContinuePrompt(false);
+    setRoutePausedStep(null);
+    setRouteStatus(shouldContinue ? 'running' : 'done');
     chatStreamRef.current?.respondContinue(shouldContinue);
   }, []);
 
@@ -529,6 +571,9 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
         stopGeneration,
         respondContinue,
         showContinuePrompt,
+        routePausedStep,
+        routeTotalSteps,
+        routeStatus,
         activeProvider,
         activeModel,
         setProvider,
