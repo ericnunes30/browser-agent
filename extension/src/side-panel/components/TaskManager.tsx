@@ -100,32 +100,32 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
   };
 
   const panelStyle: React.CSSProperties = {
-    background: 'var(--color-bg-000, #2e2e2c)',
+    background: '#FBFAF5',
     borderRadius: '12px 12px 0 0',
     padding: '16px 20px',
     width: '100%',
     maxHeight: '70vh',
     overflowY: 'auto',
-    borderTop: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
+    borderTop: '1px solid #DCD9CF',
   };
 
   const headerStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: 16, fontSize: 15, fontWeight: 600, color: 'var(--color-text-000, #f7f6f3)',
+    marginBottom: 16, fontSize: 15, fontWeight: 600, color: '#121517',
   };
 
   const cardStyle: React.CSSProperties = {
-    background: 'var(--color-bg-200, #1f1f1d)',
+    background: '#F3F0E7',
     borderRadius: 8,
     padding: '10px 14px',
     marginBottom: 8,
-    border: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
+    border: '1px solid #DCD9CF',
   };
 
   const btnStyle: React.CSSProperties = {
-    background: 'var(--color-bg-200, #1f1f1d)',
-    color: 'var(--color-text-000, #f7f6f3)',
-    border: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
+    background: '#FBFAF5',
+    color: '#121517',
+    border: '1px solid #DCD9CF',
     padding: '6px 12px',
     borderRadius: 6,
     cursor: 'pointer',
@@ -139,10 +139,10 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
       <div style={overlayStyle} onClick={onClose}>
       <div style={panelStyle} onClick={e => e.stopPropagation()}>
         <div style={headerStyle}>
-          <span>Scheduled Tasks</span>
+          <span>{t('tasks_title')}</span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={btnStyle} onClick={() => setShowCreate(!showCreate)}>
-              {showCreate ? 'Cancel' : t('task_create')}
+              {showCreate ? t('task_cancel') : t('task_create')}
             </button>
             <button style={btnStyle} onClick={onClose}>✕</button>
           </div>
@@ -168,7 +168,7 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
                 onChange={e => setForm(f => ({ ...f, type: e.target.value as any }))}
                 style={{ ...selectStyle, flex: 1 }}
               >
-                {SCHEDULE_TYPES.map(s => <option key={s} value={s}>{s === 'once' ? 'Once' : s === 'daily' ? t('task_daily') : s === 'weekly' ? t('task_weekly') : s === 'monthly' ? t('task_monthly') : s}</option>)}
+                {SCHEDULE_TYPES.map(s => <option key={s} value={s}>{s === 'once' ? t('task_once') : s === 'daily' ? t('task_daily') : s === 'weekly' ? t('task_weekly') : s === 'monthly' ? t('task_monthly') : s}</option>)}
               </select>
               <input
                 type="time"
@@ -190,7 +190,7 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
             )}
             {form.type === 'monthly' && (
               <div style={{ marginTop: 6 }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-400, #9c9b91)', marginRight: 4 }}>Day:</span>
+                <span style={{ fontSize: 11, color: '#5B6165', marginRight: 4 }}>{t('task_day')}:</span>
                 <select
                   value={form.dayOfMonth}
                   onChange={e => setForm(f => ({ ...f, dayOfMonth: parseInt(e.target.value) }))}
@@ -202,24 +202,24 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
                 </select>
               </div>
             )}
-            <button style={{ ...btnStyle, background: 'var(--color-brand, #d97757)', color: 'white', border: 'none' }} onClick={handleCreate} disabled={!canCreate}>
-              Create
+            <button style={{ ...btnStyle, background: '#1E46E8', color: '#FBFAF5', border: '1px solid #1E46E8' }} onClick={handleCreate} disabled={!canCreate}>
+              {t('task_create_btn')}
             </button>
           </div>
         )}
 
         {tasks.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--color-text-400, #9c9b91)', fontSize: 13, padding: 20 }}>
-            No scheduled tasks
+          <p style={{ textAlign: 'center', color: '#5B6165', fontSize: 13, padding: 20 }}>
+            {t('tasks_empty')}
           </p>
         ) : (
           tasks.map(task => (
             <div key={task.id} style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--color-text-000, #f7f6f3)' }}>
+                <span style={{ fontWeight: 500, fontSize: 13, color: '#121517' }}>
                   {task.name || task.command.substring(0, 40)}
                 </span>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--color-text-400, #9c9b91)', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#5B6165', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={task.enabled}
@@ -228,7 +228,7 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
                   {task.enabled ? t('on') : t('off')}
                 </label>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-400, #9c9b91)', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: '#5B6165', marginBottom: 6 }}>
                 {task.schedule.type === 'once' ? t('once') : task.schedule.type === 'daily' ? t('task_daily') : task.schedule.type === 'weekly' ? t('task_weekly') : t('task_monthly')} {t('at')} {task.schedule.time}
                 {task.schedule.dayOfWeek !== undefined ? ` (${DAYS[task.schedule.dayOfWeek]})` : ''}
                 {task.schedule.dayOfMonth ? ` (${t('day')} ${task.schedule.dayOfMonth})` : ''}
@@ -249,9 +249,9 @@ export function TaskManager({ onClose }: { onClose: () => void }) {
 
 const inputStyle: React.CSSProperties = {
   display: 'block', width: '100%', padding: '8px 10px',
-  background: 'var(--color-bg-200, #1f1f1d)',
-  border: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
-  borderRadius: 6, color: 'var(--color-text-000, #f7f6f3)',
+  background: '#FBFAF5',
+  border: '1px solid #DCD9CF',
+  borderRadius: 6, color: '#121517',
   fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
 };
 
@@ -260,8 +260,8 @@ const selectStyle: React.CSSProperties = {
 };
 
 const smallBtn: React.CSSProperties = {
-  background: 'transparent', color: 'var(--color-text-400, #9c9b91)',
-  border: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
+  background: 'transparent', color: '#5B6165',
+  border: '1px solid #DCD9CF',
   padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
   fontSize: 11, fontFamily: 'inherit',
 };

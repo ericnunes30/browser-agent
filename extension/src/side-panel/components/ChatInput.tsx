@@ -36,12 +36,12 @@ function PermissionToggle({
   const isSkip = permissionMode === 'skip_all_permission_checks';
   const OPTIONS: { label: string; value: PermissionMode; description: string }[] = [
     {
-      label: t('perm_ask_before'),
+      label: t('perm_ask_actions'),
       value: 'follow_a_plan',
       description: t('perm_plans_desc'),
     },
     {
-      label: t('perm_act_without'),
+      label: t('perm_act_no_ask'),
       value: 'skip_all_permission_checks',
       description: t('perm_auto_desc'),
     },
@@ -418,7 +418,7 @@ export default function ChatInput() {
         sendMessage('/screenshot');
         break;
       case 'help': {
-        const helpText = DEFAULT_COMMANDS.map(c => `/${c.id} \u2014 ${c.description}`).join('\n');
+        const helpText = DEFAULT_COMMANDS.map(c => `/${c.id} \u2014 ${t(`cmd_${c.id}`)}`).join('\n');
         alert(helpText);
         break;
       }
@@ -512,7 +512,7 @@ export default function ChatInput() {
                     justifyContent: 'center',
                     padding: 0,
                   }}
-                  title="Remove"
+                  title={t('attach_remove')}
                 >
                   <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
@@ -530,7 +530,7 @@ export default function ChatInput() {
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={hasMessages ? 'Ask for a route' : 'Where should I go'}
+            placeholder={hasMessages ? t('route_ask') : t('route_where')}
             rows={1}
             disabled={isStreaming}
             className="ba-composer-input"
@@ -655,7 +655,7 @@ export default function ChatInput() {
             textAlign: 'center',
           }}
         >
-          BrowserAgent can make mistakes. Check the route
+          {t('disclaimer_route')}
         </span>
       </div>
       <div style={{ display: 'none' }} aria-hidden="true">{canSend ? '' : ''}</div>

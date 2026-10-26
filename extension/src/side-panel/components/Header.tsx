@@ -105,16 +105,16 @@ export default function Header({
           </svg>
         </button>
 
-        <span className="ba-tab-chip" title="BrowserAgent is on this tab">
+        <span className="ba-tab-chip" title={t('tab_active')}>
           <span className="ba-tab-chip-dot" aria-hidden="true" />
-          <span>THIS TAB</span>
+          <span>{t('tab_chip')}</span>
         </span>
 
         {/* New badge for model updates */}
         {hasNewModels && onReloadModels && (
           <button
             onClick={onReloadModels}
-            title="Reload models"
+            title={t('models_reload')}
             style={{
               position: 'relative',
               marginLeft: 2,
@@ -129,7 +129,7 @@ export default function Header({
               lineHeight: '18px',
             }}
           >
-            New
+            {t('models_new_badge')}
           </button>
         )}
 
@@ -162,7 +162,7 @@ export default function Header({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t('chat_model_search_placeholder')}
+                    placeholder={t('models_search')}
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
@@ -242,14 +242,14 @@ export default function Header({
                     ))
                   ) : (
                     <div style={{ padding: '10px', fontSize: 12, color: '#5B6165', textAlign: 'center' }}>
-                      No models match.
+                      {t('models_no_match')}
                     </div>
                   )}
                 </div>
               </>
             ) : (
               <div style={{ padding: '10px', fontSize: 12, color: '#5B6165', textAlign: 'center' }}>
-                <div>No AI providers configured.</div>
+                <div>{t('models_no_providers')}</div>
                 <button
                   onClick={() => chrome.runtime.openOptionsPage?.()}
                   style={{
@@ -264,7 +264,7 @@ export default function Header({
                     cursor: 'pointer',
                   }}
                 >
-                  Open Options
+                  {t('header_options')}
                 </button>
               </div>
             )}
@@ -303,7 +303,7 @@ export default function Header({
         {/* Tasks (scheduled) */}
         <button
           onClick={onTasksClick}
-          title="Scheduled tasks"
+          title={t('tasks_title')}
           className="ba-icon-btn"
           style={{
             display: 'inline-flex',
@@ -373,7 +373,7 @@ export default function Header({
         {/* Settings */}
         <button
           onClick={onSettingsClick}
-          title="Settings"
+          title={t('header_settings')}
           className="ba-icon-btn"
           style={{
             display: 'inline-flex',
@@ -396,7 +396,7 @@ export default function Header({
         {/* Options */}
         <button
           onClick={() => chrome.runtime.openOptionsPage?.()}
-          title="Open extension options"
+          title={t('providers_manage')}
           className="ba-btn"
           style={{
             display: 'inline-flex',
@@ -412,7 +412,7 @@ export default function Header({
             cursor: 'pointer',
           }}
         >
-          Options
+          {t('header_options')}
         </button>
       </div>
     </div>

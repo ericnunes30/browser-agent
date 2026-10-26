@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { t } from '../../utils/i18n';
 
 export interface Command {
   id: string;
@@ -9,12 +10,12 @@ export interface Command {
 }
 
 export const DEFAULT_COMMANDS: Command[] = [
-  { id: 'clear', label: 'Clear conversation', icon: '🗑', description: 'Clear all messages', action: () => {} },
-  { id: 'screenshot', label: 'Take screenshot', icon: '📸', description: 'Capture current page', action: () => {} },
-  { id: 'help', label: 'Show commands', icon: 'ℹ️', description: 'List all available commands', action: () => {} },
-  { id: 'settings', label: 'Open settings', icon: '⚙️', description: 'Open extension options', action: () => {} },
-  { id: 'tabs', label: 'Show tabs', icon: '📋', description: 'Show current tab context', action: () => {} },
-  { id: 'status', label: 'Show status', icon: '📊', description: 'Show current provider and mode', action: () => {} },
+  { id: 'clear', label: 'Clear conversation', icon: '', description: 'Clear all messages', action: () => {} },
+  { id: 'screenshot', label: 'Take screenshot', icon: '', description: 'Capture current page', action: () => {} },
+  { id: 'help', label: 'Show commands', icon: '', description: 'List all available commands', action: () => {} },
+  { id: 'settings', label: 'Open settings', icon: '', description: 'Open extension options', action: () => {} },
+  { id: 'tabs', label: 'Show tabs', icon: '', description: 'Show current tab context', action: () => {} },
+  { id: 'status', label: 'Show status', icon: '', description: 'Show current provider and mode', action: () => {} },
 ];
 
 interface CommandsMenuProps {
@@ -89,18 +90,18 @@ export function CommandsMenu({ filter, commands, onSelect, onClose }: CommandsMe
     left: 0,
     right: 0,
     marginBottom: 4,
-    background: 'var(--color-bg-000, #2e2e2c)',
-    border: '0.5px solid var(--color-border-100, rgba(209,205,195,0.15))',
-    borderRadius: 12,
+    background: '#FBFAF5',
+    border: '1px solid #DCD9CF',
+    borderRadius: 6,
     padding: 6,
-    boxShadow: '0 -4px 16px rgba(0,0,0,0.3)',
+    boxShadow: '0 18px 40px rgba(18, 21, 23, 0.14)',
     zIndex: 100,
     maxHeight: 240,
     overflowY: 'auto',
   };
 
   return (
-    <div ref={menuRef} style={menuStyle} tabIndex={-1}>
+    <div ref={menuRef} style={menuStyle} tabIndex={-1} className="ba-menu">
       {filtered.map((cmd, i) => (
         <button
           key={cmd.id}
@@ -109,11 +110,11 @@ export function CommandsMenu({ filter, commands, onSelect, onClose }: CommandsMe
             alignItems: 'center',
             gap: 8,
             padding: '8px 12px',
-            borderRadius: 8,
+            borderRadius: 6,
             cursor: 'pointer',
             fontSize: 13,
-            color: 'var(--color-text-000, #f7f6f3)',
-            background: i === selectedIndex ? 'var(--color-border-100, rgba(209,205,195,0.15))' : 'transparent',
+            color: '#121517',
+            background: i === selectedIndex ? '#DCE4FF' : 'transparent',
             border: 'none',
             width: '100%',
             textAlign: 'left' as const,
@@ -122,10 +123,9 @@ export function CommandsMenu({ filter, commands, onSelect, onClose }: CommandsMe
           onMouseEnter={() => setSelectedIndex(i)}
           onClick={() => { onSelect(cmd); onClose(); }}
         >
-          <span style={{ fontSize: 16 }}>{cmd.icon}</span>
           <div>
             <div style={{ fontWeight: 500 }}>/{cmd.id}</div>
-            <div style={{ fontSize: 11, color: 'var(--color-text-400, #9c9b91)' }}>{cmd.description}</div>
+            <div style={{ fontSize: 11, color: '#5B6165' }}>{t(`cmd_${cmd.id}`)}</div>
           </div>
         </button>
       ))}
