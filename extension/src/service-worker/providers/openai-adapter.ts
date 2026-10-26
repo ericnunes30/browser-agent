@@ -6,6 +6,7 @@ import type { ProviderAdapter, PromptParams, StreamCallbacks } from './adapter';
 import {
   buildAuthHeaders,
   buildBaseHeaders,
+  buildOpencodeHeaders,
   normalizeError,
   parseSSE,
 } from './http-helpers';
@@ -22,7 +23,7 @@ function isSupported(endpoint: ProviderEndpoint): boolean {
 }
 
 function buildHeaders(endpoint: ProviderEndpoint): Record<string, string> {
-  return { ...buildBaseHeaders(), ...buildAuthHeaders(endpoint) };
+  return { ...buildBaseHeaders(), ...buildAuthHeaders(endpoint), ...buildOpencodeHeaders(endpoint) };
 }
 
 export class OpenAIAdapter implements ProviderAdapter {

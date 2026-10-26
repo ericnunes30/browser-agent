@@ -5,6 +5,7 @@
 import {
   buildAuthHeaders,
   buildBaseHeaders,
+  buildOpencodeHeaders,
   normalizeError,
   parseNDJSON,
 } from './http-helpers';
@@ -79,6 +80,7 @@ export class OllamaAdapter implements ProviderAdapter {
     const headers: Record<string, string> = {
       ...buildBaseHeaders(),
       ...buildAuthHeaders(endpoint),
+      ...buildOpencodeHeaders(endpoint),
     };
 
     const baseUrl = normalizeOllamaBaseUrl(endpoint.baseUrl);
@@ -134,6 +136,7 @@ export class OllamaAdapter implements ProviderAdapter {
     const headers: Record<string, string> = {
       ...buildBaseHeaders(),
       ...buildAuthHeaders(endpoint),
+      ...buildOpencodeHeaders(endpoint),
     };
 
     const controller = new AbortController();
@@ -177,6 +180,7 @@ export class OllamaAdapter implements ProviderAdapter {
     const headers: Record<string, string> = {
       ...buildBaseHeaders(),
       ...buildAuthHeaders(endpoint),
+      ...buildOpencodeHeaders(endpoint),
       // Note: we cannot set the Origin header from fetch(); the browser sends
       // null or chrome-extension://<id>. Ollama must allow those origins via
       // OLLAMA_ORIGINS=chrome-extension://*.

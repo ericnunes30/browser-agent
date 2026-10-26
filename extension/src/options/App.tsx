@@ -19,6 +19,7 @@ import {
 import {
   buildAuthHeaders,
   buildBaseHeaders,
+  buildOpencodeHeaders,
 } from '../service-worker/providers/http-helpers';
 import './style.css';
 
@@ -256,8 +257,9 @@ export function App() {
     try {
       const baseHeaders = buildBaseHeaders();
       const authHeaders = buildAuthHeaders(provider);
+      const opencodeHeaders = buildOpencodeHeaders(provider);
       let url: string;
-      let headers: Record<string, string> = { ...baseHeaders, ...authHeaders };
+      let headers: Record<string, string> = { ...baseHeaders, ...authHeaders, ...opencodeHeaders };
 
       switch (provider.type) {
         case 'ollama':

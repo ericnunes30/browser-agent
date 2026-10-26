@@ -13,6 +13,7 @@ import type {
 import {
   buildAuthHeaders,
   buildBaseHeaders,
+  buildOpencodeHeaders,
   normalizeError,
   parseSSE,
 } from './http-helpers';
@@ -213,6 +214,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     return {
       ...buildBaseHeaders(),
       ...buildAuthHeaders(endpoint),
+      ...buildOpencodeHeaders(endpoint),
       'anthropic-version': ANTHROPIC_VERSION,
     };
   }

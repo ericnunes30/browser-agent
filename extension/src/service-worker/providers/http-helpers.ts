@@ -158,6 +158,56 @@ export function buildBaseHeaders(): Record<string, string> {
   };
 }
 
+const OPENCODE_SESSION_STORAGE_KEY = 'ba-opencode-session-id';
+let cachedOpencodeSessionId: string | null = null;
+
+function getOpencodeSessionId(): string {
+  if (cachedOpencodeSessionId) return cachedOpencodeSessionId;
+  const fresh =
+    (globalThis as any)?.crypto?.randomUUID?.() ??
+    `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  cachedOpencodeSessionId = fresh;
+  try {
+    chrome?.storage?.local?.get?.(
+      [OPENCODE_SESSION_STORAGE_KEY],
+      (res: any) => {
+        try {
+          const saved = res?.[OPENCODE_SESSION_STORAGE_KEY];
+          if (typeof saved === 'string' && saved.length > 0) {
+            cachedOpencodeSessionId = saved;
+          } else {
+            chrome?.storage?.local?.set?.({
+              [OPENCODE_SESSION_STORAGE_KEY]: fresh,
+            });
+          }
+        } catch {
+          // ignore persistence errors
+        }
+      },
+    );
+  } catch {
+    // chrome.storage unavailable (e.g. non-extension context)
+  }
+  return fresh;
+}
+
+/**
+ * Extra headers required by OpenCode Go (https://opencode.ai/docs/go/#where-can-i-use-it):
+ * - x-opencode-session: stable per-conversation ID for routing / prompt-cache
+ * - x-opencode-client: identifies this client instead of a generic SDK UA
+ * Only sent to opencode.ai endpoints to avoid CORS preflights on other providers.
+ */
+export function buildOpencodeHeaders(
+  endpoint: Pick<ProviderEndpoint, 'baseUrl'>,
+): Record<string, string> {
+  const url = (endpoint?.baseUrl ?? '').toLowerCase();
+  if (!url.includes('opencode.ai')) return {};
+  return {
+    'x-opencode-session': getOpencodeSessionId(),
+    'x-opencode-client': 'browser-agent/0.1.0',
+  };
+}
+
 const FRIENDLY_STATUS: Record<number, string> = {
   400: 'Bad request',
   401: 'Unauthorized — check your API key',
