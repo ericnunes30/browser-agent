@@ -3,15 +3,11 @@ import { useChat, type PermissionMode, type ImageAttachment } from '../ChatConte
 import { t } from '../../utils/i18n';
 import { CommandsMenu, DEFAULT_COMMANDS, Command } from './CommandsMenu';
 
-/* ─── Types ──────────────────────────────────────────────────── */
-
 interface ActionsMenuProps {
   onScreenshot: () => void;
   onUpload: () => void;
   disabled?: boolean;
 }
-
-/* ─── Permission Mode Toggle (ZW) ────────────────────────────── */
 
 function PermissionToggle({
   permissionMode,
@@ -68,7 +64,7 @@ function PermissionToggle({
           fontWeight: 500,
           background: 'transparent',
           border: 'none',
-          color: 'var(--color-text-400)',
+          color: '#5B6165',
           cursor: disabled ? 'default' : 'pointer',
           opacity: disabled ? 0.5 : 1,
         }}
@@ -89,17 +85,18 @@ function PermissionToggle({
       {/* Dropdown */}
       {open && (
         <div
+          className="ba-menu"
           style={{
             position: 'absolute',
             bottom: '100%',
             left: 0,
             marginBottom: 4,
-            background: 'var(--color-bg-000)',
-            border: '0.5px solid var(--color-border-200)',
-            borderRadius: 10,
+            background: '#FBFAF5',
+            border: '1px solid #DCD9CF',
+            borderRadius: 6,
             padding: 4,
             minWidth: 220,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            boxShadow: '0 18px 40px rgba(18, 21, 23, 0.14)',
             zIndex: 100,
           }}
         >
@@ -116,10 +113,10 @@ function PermissionToggle({
                 gap: 10,
                 width: '100%',
                 padding: '8px 10px',
-                borderRadius: 8,
-                background: opt.value === permissionMode ? 'var(--color-border-100)' : 'transparent',
+                borderRadius: 6,
+                background: opt.value === permissionMode ? '#DCE4FF' : 'transparent',
                 border: 'none',
-                color: 'var(--color-text-000)',
+                color: '#121517',
                 cursor: 'pointer',
                 textAlign: 'left',
                 fontSize: 12,
@@ -134,7 +131,7 @@ function PermissionToggle({
               </svg>
               <div>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>{opt.label}</div>
-                <div style={{ color: 'var(--color-text-400)', fontSize: 11 }}>{opt.description}</div>
+                <div style={{ color: '#5B6165', fontSize: 11 }}>{opt.description}</div>
               </div>
             </button>
           ))}
@@ -143,8 +140,6 @@ function PermissionToggle({
     </div>
   );
 }
-
-/* ─── Actions Menu ────────────────────────────────────────────── */
 
 function ActionsMenu({ onScreenshot, onUpload, disabled }: ActionsMenuProps) {
   const [open, setOpen] = useState(false);
@@ -172,10 +167,10 @@ function ActionsMenu({ onScreenshot, onUpload, disabled }: ActionsMenuProps) {
           justifyContent: 'center',
           width: 28,
           height: 28,
-          borderRadius: 8,
+          borderRadius: 6,
           border: 'none',
           background: 'transparent',
-          color: 'var(--color-text-400)',
+          color: '#5B6165',
           cursor: disabled ? 'default' : 'pointer',
           opacity: disabled ? 0.5 : 1,
         }}
@@ -188,17 +183,18 @@ function ActionsMenu({ onScreenshot, onUpload, disabled }: ActionsMenuProps) {
 
       {open && (
         <div
+          className="ba-menu"
           style={{
             position: 'absolute',
             bottom: '100%',
             right: 0,
             marginBottom: 4,
-            background: 'var(--color-bg-000)',
-            border: '0.5px solid var(--color-border-200)',
-            borderRadius: 10,
+            background: '#FBFAF5',
+            border: '1px solid #DCD9CF',
+            borderRadius: 6,
             padding: 4,
             minWidth: 180,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            boxShadow: '0 18px 40px rgba(18, 21, 23, 0.14)',
             zIndex: 100,
           }}
         >
@@ -213,7 +209,7 @@ function ActionsMenu({ onScreenshot, onUpload, disabled }: ActionsMenuProps) {
               borderRadius: 6,
               border: 'none',
               background: 'transparent',
-              color: 'var(--color-text-000)',
+              color: '#121517',
               cursor: 'pointer',
               textAlign: 'left',
               fontSize: 12,
@@ -235,7 +231,7 @@ function ActionsMenu({ onScreenshot, onUpload, disabled }: ActionsMenuProps) {
               borderRadius: 6,
               border: 'none',
               background: 'transparent',
-              color: 'var(--color-text-000)',
+              color: '#121517',
               cursor: 'pointer',
               textAlign: 'left',
               fontSize: 12,
@@ -253,8 +249,6 @@ function ActionsMenu({ onScreenshot, onUpload, disabled }: ActionsMenuProps) {
   );
 }
 
-/* ─── HIGH RISK Banner ────────────────────────────────────────── */
-
 function HighRiskBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div
@@ -264,15 +258,15 @@ function HighRiskBanner({ onDismiss }: { onDismiss: () => void }) {
         gap: 8,
         padding: '8px 12px',
         margin: '0 0 8px',
-        borderRadius: 8,
-        background: 'hsla(45, 100%, 50%, 0.08)',
-        border: '0.5px solid hsla(45, 100%, 50%, 0.2)',
+        borderRadius: 6,
+        background: '#F3F0E7',
+        border: '1px solid #DCD9CF',
         fontSize: 11,
         lineHeight: 1.4,
-        color: 'var(--color-text-200)',
+        color: '#5B6165',
       }}
     >
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0, marginTop: 1, color: '#BF8534' }}>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0, marginTop: 1, color: '#C98A1E' }}>
         <path d="M8.97.348a1.5 1.5 0 00-1.94 0L.342 6.435a1.5 1.5 0 00-.342.84V15a1 1 0 001 1h14a1 1 0 001-1V7.275a1.5 1.5 0 00-.342-.84L8.97.348zM8 4a.5.5 0 01.5.5v4a.5.5 0 01-1 0v-4A.5.5 0 018 4zm0 7.5a.75.75 0 110-1.5.75.75 0 010 1.5z" />
       </svg>
       <div style={{ flex: 1 }}>
@@ -283,7 +277,7 @@ function HighRiskBanner({ onDismiss }: { onDismiss: () => void }) {
             background: 'none',
             border: 'none',
             textDecoration: 'underline',
-            color: 'var(--color-text-000)',
+            color: '#121517',
             cursor: 'pointer',
             fontSize: 11,
             padding: 0,
@@ -295,8 +289,6 @@ function HighRiskBanner({ onDismiss }: { onDismiss: () => void }) {
     </div>
   );
 }
-
-/* ─── Main ChatInput Component ────────────────────────────────── */
 
 export default function ChatInput() {
   const [text, setText] = useState('');
@@ -362,15 +354,12 @@ export default function ChatInput() {
   }, []);
 
   const handleUpload = useCallback(() => {
-    console.log('[BA Upload] handleUpload called, fileInputRef:', fileInputRef.current);
     fileInputRef.current?.click();
   }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log('[BA Upload] files selected:', files?.length ?? 0, files ? Array.from(files).map(f => f.name) : 'none');
     if (!files || files.length === 0) {
-      console.log('[BA Upload] no files selected');
       return;
     }
 
@@ -380,9 +369,7 @@ export default function ChatInput() {
 
     const checkDone = () => {
       processed++;
-      console.log('[BA Upload] processed', processed, 'of', totalFiles);
       if (processed === totalFiles) {
-        console.log('[BA Upload] adding', newAttachments.length, 'attachments');
         if (newAttachments.length > 0) {
           setAttachments((prev) => [...prev, ...newAttachments]);
         }
@@ -390,9 +377,7 @@ export default function ChatInput() {
     };
 
     for (const file of Array.from(files)) {
-      console.log('[BA Upload] checking file:', file.name, 'type:', file.type);
       if (!file.type.startsWith('image/')) {
-        console.log('[BA Upload] skipped non-image:', file.name);
         checkDone();
         continue;
       }
@@ -400,7 +385,6 @@ export default function ChatInput() {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
-        console.log('[BA Upload] loaded image:', file.name, 'dataUrl length:', dataUrl.length);
         newAttachments.push({
           id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           dataUrl,
@@ -410,7 +394,6 @@ export default function ChatInput() {
         checkDone();
       };
       reader.onerror = () => {
-        console.error('[BA Upload] Failed to read image:', file.name);
         checkDone();
       };
       reader.readAsDataURL(file);
@@ -461,8 +444,8 @@ export default function ChatInput() {
     <div
       style={{
         padding: '0 12px 0',
-        borderTop: '0.5px solid var(--color-border-100)',
-        background: 'var(--color-bg-100)',
+        borderTop: '1px solid #DCD9CF',
+        background: '#FBFAF5',
         flexShrink: 0,
       }}
     >
@@ -475,12 +458,13 @@ export default function ChatInput() {
 
       {/* Input container */}
       <div
+        className="ba-composer"
         style={{
           position: 'relative',
           marginTop: 8,
-          background: 'var(--color-bg-000)',
-          borderRadius: 16,
-          border: '0.5px solid var(--color-border-100)',
+          background: '#FBFAF5',
+          borderRadius: 14,
+          border: '1px solid #DCD9CF',
           transition: 'box-shadow 0.15s',
         }}
       >
@@ -505,8 +489,8 @@ export default function ChatInput() {
                     width: 60,
                     height: 60,
                     objectFit: 'cover',
-                    borderRadius: 8,
-                    border: '1px solid var(--color-border-200)',
+                    borderRadius: 6,
+                    border: '1px solid #DCD9CF',
                   }}
                 />
                 <button
@@ -517,10 +501,10 @@ export default function ChatInput() {
                     right: -6,
                     width: 18,
                     height: 18,
-                    borderRadius: '50%',
-                    background: 'var(--color-bg-300)',
-                    border: '1px solid var(--color-border-200)',
-                    color: 'var(--color-text-000)',
+                    borderRadius: 6,
+                    background: '#F3F0E7',
+                    border: '1px solid #DCD9CF',
+                    color: '#121517',
                     fontSize: 10,
                     cursor: 'pointer',
                     display: 'flex',
@@ -546,15 +530,15 @@ export default function ChatInput() {
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={hasMessages ? t('input_placeholder_reply') : t('input_placeholder_empty')}
+            placeholder={hasMessages ? 'Ask for a route' : 'Where should I go'}
             rows={1}
             disabled={isStreaming}
+            className="ba-composer-input"
             style={{
               width: '100%',
               background: 'none',
               border: 'none',
-              outline: 'none',
-              color: 'var(--color-text-000)',
+              color: '#121517',
               fontFamily: 'inherit',
               fontSize: 14,
               lineHeight: 1.5,
@@ -596,16 +580,17 @@ export default function ChatInput() {
             {isStreaming ? (
               <button
                 onClick={stopGeneration}
+                className="ba-btn"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   width: 28,
                   height: 28,
-                  borderRadius: 8,
+                  borderRadius: 6,
                   border: 'none',
                   background: 'transparent',
-                  color: 'var(--color-text-400)',
+                  color: '#5B6165',
                   cursor: 'pointer',
                 }}
                 title={t('input_stop')}
@@ -618,16 +603,17 @@ export default function ChatInput() {
               <button
                 onClick={handleSubmit}
                 disabled={!text.trim()}
+                className="ba-send-btn"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   width: 28,
                   height: 28,
-                  borderRadius: 8,
+                  borderRadius: 6,
                   border: 'none',
-                  background: isSkipMode ? '#BF8534' : 'var(--color-brand)',
-                  color: 'white',
+                  background: isSkipMode ? '#C98A1E' : '#1E46E8',
+                  color: '#FBFAF5',
                   cursor: text.trim() ? 'pointer' : 'default',
                   opacity: text.trim() ? 1 : 0.5,
                   transition: 'all 0.15s',
@@ -661,24 +647,18 @@ export default function ChatInput() {
           padding: '8px 0 10px',
         }}
       >
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            chrome.tabs.create({
-              url: 'https://support.anthropic.com/en/articles/8525154-claude-is-providing-incorrect-or-misleading-responses-what-s-going-on',
-            });
-          }}
+        <span
           style={{
             fontSize: 11,
-            color: 'var(--color-text-400)',
+            color: '#5B6165',
             textDecoration: 'none',
             textAlign: 'center',
           }}
         >
-          {t('disclaimer')}
-        </a>
+          BrowserAgent can make mistakes. Check the route
+        </span>
       </div>
+      <div style={{ display: 'none' }} aria-hidden="true">{canSend ? '' : ''}</div>
     </div>
   );
 }
