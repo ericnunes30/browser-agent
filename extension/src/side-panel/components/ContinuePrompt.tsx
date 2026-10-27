@@ -16,7 +16,7 @@ export function ContinuePrompt() {
 
   return (
     <div style={overlayStyle} role="dialog" aria-modal="true" aria-label="Checkpoint de rota">
-      <div style={sheetStyle} className="ba-checkpoint">
+      <div style={sheetStyle} className="ba-checkpoint ba-sheet-in">
         <div style={labelStyle} className="ba-mono">
           Checkpoint
         </div>

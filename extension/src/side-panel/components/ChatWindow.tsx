@@ -214,10 +214,11 @@ function RouteBanner() {
   if (isPaused) {
     const step = typeof routePausedStep === 'number' && routePausedStep > 0 ? String(routePausedStep) : '0';
     return (
-      <div style={cardStyle} role="status">
+      <div style={cardStyle} className="ba-sheet-in" role="status">
         <div style={labelStyle}>{t('checkpoint_label')}</div>
         <div style={{ color: '#121517', fontWeight: 600, marginBottom: 4, fontFamily: SANS }}>
           {t('route_paused_step', step)}
+          <span className="ba-blink-cursor" aria-hidden="true" />
         </div>
         <div style={{ color: '#5B6165', marginBottom: 8, fontFamily: SANS }}>{t('route_paused_confirm')}</div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -234,7 +235,7 @@ function RouteBanner() {
 
   if (isError) {
     return (
-      <div style={cardStyle} role="alert">
+      <div style={cardStyle} className="ba-sheet-in" role="alert">
         <div style={labelStyle}>{t('banner_error')}</div>
         <div style={{ color: '#121517', marginBottom: 8, fontFamily: SANS, wordBreak: 'break-word' }}>
           {lastMsg ? lastMsg.content : t('banner_error')}
@@ -249,7 +250,7 @@ function RouteBanner() {
   }
 
   return (
-    <div style={cardStyle} role="status">
+    <div style={cardStyle} className="ba-sheet-in" role="status">
       <div style={{ color: '#121517', fontWeight: 600, marginBottom: 8, fontFamily: SANS }}>
         {t('route_stopped')}
       </div>

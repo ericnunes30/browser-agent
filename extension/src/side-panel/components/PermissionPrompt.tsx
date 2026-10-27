@@ -135,7 +135,7 @@ export function PermissionPrompt({ request, onResponse, onDismiss }: PermissionP
 
   return (
     <div style={overlay} onClick={onDismiss} role="dialog" aria-modal="true" aria-label="Checkpoint">
-      <div style={card} onClick={(e) => e.stopPropagation()} className="ba-checkpoint">
+      <div style={card} onClick={(e) => e.stopPropagation()} className="ba-checkpoint ba-sheet-in">
         {state === 'requesting' && (
           <>
             <div style={labelMono} className="ba-mono">

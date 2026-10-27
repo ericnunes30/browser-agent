@@ -94,8 +94,11 @@ function RouteNode({ state }: { state: BaStepState }) {
           boxShadow: '0 0 0 4px #DCE4FF',
           display: 'inline-flex',
           flexShrink: 0,
+          position: 'relative',
         }}
-      />
+      >
+        <span className="ba-node-ring" aria-hidden="true" />
+      </span>
     );
   }
   if (state === 'error') {
@@ -180,6 +183,7 @@ function StatusChip({ state }: { state: BaStepState }) {
         borderRadius: 4,
         padding: '1px 6px',
         whiteSpace: 'nowrap',
+        transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease',
       }}
     >
       {stepLabelPT(state)}
@@ -195,7 +199,7 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
   const isNow = state === 'now';
 
   return (
-    <div style={{ display: 'flex', gap: 10, position: 'relative' }}>
+    <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
         <RouteNode state={state} />
         {!isLast && (
@@ -302,7 +306,7 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
             flexWrap: 'wrap',
           }}
         >
-          <span>{total > 0 ? `Rota ${total} passos` : 'Rota'}</span>
+          <span>{total > 0 ? (total === 1 ? t('route_steps_one') : t('route_steps_other', String(total))) : t('route_title')}</span>
           <StatusChip state={headerState} />
         </div>
 
@@ -337,13 +341,13 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
                   gap: 8,
                 }}
               >
-                <span style={{ flex: 1 }}>Próximo</span>
+                <span style={{ flex: 1 }}>{t('step_next')}</span>
                 <StatusChip state="next" />
               </div>
             </div>
           )}
           {total === 0 && !isRunning && (
-            <div style={{ fontSize: 12, color: '#5B6165' }}>Rota vazia</div>
+            <div style={{ fontSize: 12, color: '#5B6165' }}>{t('route_empty')}</div>
           )}
         </div>
       </div>
