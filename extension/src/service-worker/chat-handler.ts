@@ -70,12 +70,12 @@ export function getBaRouteStatus(): BaRouteState {
 }
 
 export function getBaRouteLabel(total: number): string {
-  if (total <= 0) return 'Rota';
-  return total === 1 ? 'Rota · 1 passo' : `Rota · ${total} passos`;
+  if (total <= 0) return 'Fluxo';
+  return total === 1 ? 'Fluxo · 1 ação' : `Fluxo · ${total} ações`;
 }
 
 export function getBaRoutePausedLabel(step: number): string {
-  return `Rota pausada no passo ${step}.`;
+  return `Fluxo pausado no passo ${step}.`;
 }
 
 function setBaRoute(next: Partial<BaRouteState>): void {

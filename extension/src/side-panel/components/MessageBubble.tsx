@@ -249,7 +249,7 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
   );
 }
 
-/* ─── Tool Message Bubble — Rota N passos ────────────────────── */
+/* ─── Tool Message Bubble — Fluxo N ações ───────────────────── */
 function ToolMessageBubble({ message }: { message: DisplayMessage }) {
   const execs = message.toolExecutions || [];
   const isRunning = message.streaming;
@@ -260,9 +260,7 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
   // Rolling window: show only the 3 most recent steps, older ones collapse
   // behind a quiet expander instead of duplicating route blocks.
   const VISIBLE_STEPS = 3;
-  const [expanded, setExpanded] = useState(false);
-  const hiddenCount = Math.max(0, execs.length - VISIBLE_STEPS);
-  const visibleExecs = expanded || hiddenCount === 0 ? execs : execs.slice(-VISIBLE_STEPS);
+  const visibleExecs = execs.length > VISIBLE_STEPS ? execs.slice(-VISIBLE_STEPS) : execs;
   const lastExecId = execs.length > 0 ? execs[execs.length - 1].id : undefined;
 
   return (
@@ -326,32 +324,10 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
             padding: 10,
           }}
         >
-          {hiddenCount > 0 && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              aria-expanded={expanded}
-              style={{
-                display: 'block',
-                margin: '0 0 8px 28px',
-                padding: '2px 0',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                color: '#5B6165',
-              }}
-            >
-              {expanded ? t('route_collapse') : `+${hiddenCount} ${t('route_older', String(hiddenCount))}`}
-            </button>
-          )}
-          {visibleExecs.map((exec, idx) => {
+          {visibleExecs.map((exec) => {
             const isLast = exec.id === lastExecId && !isRunning;
-            const dimmed = expanded && hiddenCount > 0 && idx < hiddenCount;
             return (
-              <div key={exec.id} style={{ opacity: dimmed ? 0.55 : 1 }}>
+              <div key={exec.id}>
                 <ToolExecutionRow exec={exec} isLast={isLast} />
               </div>
             );

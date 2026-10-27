@@ -149,7 +149,7 @@ function EmptyState() {
 }
 
 function RouteBanner() {
-  const { messages, sendMessage, isStreaming, routeStatus, routePausedStep, respondContinue, stopGeneration } = useChat();
+  const { messages, sendMessage, isStreaming, routeStatus, stopGeneration } = useChat();
 
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
   const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
@@ -210,28 +210,6 @@ function RouteBanner() {
     cursor: 'pointer',
     fontFamily: SANS,
   };
-
-  if (isPaused) {
-    const step = typeof routePausedStep === 'number' && routePausedStep > 0 ? String(routePausedStep) : '0';
-    return (
-      <div style={cardStyle} className="ba-sheet-in" role="status">
-        <div style={labelStyle}>{t('checkpoint_label')}</div>
-        <div style={{ color: '#121517', fontWeight: 600, marginBottom: 4, fontFamily: SANS }}>
-          {t('route_paused_step', step)}
-          <span className="ba-blink-cursor" aria-hidden="true" />
-        </div>
-        <div style={{ color: '#5B6165', marginBottom: 8, fontFamily: SANS }}>{t('route_paused_confirm')}</div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" style={ghostBtn} onClick={() => respondContinue(false)}>
-            {t('chat_abort')}
-          </button>
-          <button type="button" style={primaryBtn} onClick={() => respondContinue(true)}>
-            {t('route_continue')}
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   if (isError) {
     return (

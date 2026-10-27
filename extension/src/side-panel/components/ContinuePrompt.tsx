@@ -12,10 +12,10 @@ export function ContinuePrompt() {
   if (!showContinuePrompt) return null;
 
   const step = typeof routePausedStep === 'number' && routePausedStep > 0 ? routePausedStep : null;
-  const title = step !== null ? `Rota pausada no passo ${step}.` : 'Rota pausada.';
+  const title = step !== null ? `Fluxo pausado no passo ${step}.` : 'Fluxo pausado.';
 
   return (
-    <div style={overlayStyle} role="dialog" aria-modal="true" aria-label="Checkpoint de rota">
+    <div style={overlayStyle} role="dialog" aria-modal="true" aria-label="Checkpoint de fluxo">
       <div style={sheetStyle} className="ba-checkpoint ba-sheet-in">
         <div style={labelStyle} className="ba-mono">
           Checkpoint
@@ -24,7 +24,7 @@ export function ContinuePrompt() {
         <div style={descStyle}>Pausado aguardando sua confirmação</div>
         <div style={buttonsStyle}>
           <button type="button" style={continueBtnStyle} className="ba-btn-primary" onClick={() => respondContinue(true)}>
-            Continuar rota
+            Continuar fluxo
           </button>
           <button type="button" style={stopBtnStyle} className="ba-btn-ghost" onClick={() => respondContinue(false)}>
             Parar
