@@ -257,6 +257,14 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
   const total = execs.length;
   const headerState: BaStepState = hasError ? 'error' : isRunning ? 'now' : 'done';
 
+  // Rolling window: show only the 3 most recent steps, older ones collapse
+  // behind a quiet expander instead of duplicating route blocks.
+  const VISIBLE_STEPS = 3;
+  const [expanded, setExpanded] = useState(false);
+  const hiddenCount = Math.max(0, execs.length - VISIBLE_STEPS);
+  const visibleExecs = expanded || hiddenCount === 0 ? execs : execs.slice(-VISIBLE_STEPS);
+  const lastExecId = execs.length > 0 ? execs[execs.length - 1].id : undefined;
+
   return (
     <div
       className="ba-route"
@@ -318,34 +326,36 @@ function ToolMessageBubble({ message }: { message: DisplayMessage }) {
             padding: 10,
           }}
         >
-          {execs.map((exec, idx) => (
-            <ToolExecutionRow key={exec.id} exec={exec} isLast={idx === execs.length - 1 && !isRunning} />
-          ))}
-          {isRunning && (
-            <div style={{ display: 'flex', gap: 10, position: 'relative', marginTop: execs.length > 0 ? 0 : 0 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
-                <RouteNode state="next" />
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  background: 'transparent',
-                  border: '1px dashed #DCD9CF',
-                  color: '#5B6165',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                <span style={{ flex: 1 }}>{t('step_next')}</span>
-                <StatusChip state="next" />
-              </div>
-            </div>
+          {hiddenCount > 0 && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              style={{
+                display: 'block',
+                margin: '0 0 8px 28px',
+                padding: '2px 0',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: '#5B6165',
+              }}
+            >
+              {expanded ? t('route_collapse') : `+${hiddenCount} ${t('route_older', String(hiddenCount))}`}
+            </button>
           )}
+          {visibleExecs.map((exec, idx) => {
+            const isLast = exec.id === lastExecId && !isRunning;
+            const dimmed = expanded && hiddenCount > 0 && idx < hiddenCount;
+            return (
+              <div key={exec.id} style={{ opacity: dimmed ? 0.55 : 1 }}>
+                <ToolExecutionRow exec={exec} isLast={isLast} />
+              </div>
+            );
+          })}
           {total === 0 && !isRunning && (
             <div style={{ fontSize: 12, color: '#5B6165' }}>{t('route_empty')}</div>
           )}

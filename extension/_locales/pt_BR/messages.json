@@ -228,6 +228,8 @@
   "step_now": { "message": "Agora" },
   "step_next": { "message": "Próximo" },
   "route_empty": { "message": "Rota vazia" },
+  "route_older": { "message": "$COUNT$ anteriores", "placeholders": { "COUNT": { "content": "$1" } } },
+  "route_collapse": { "message": "Recolher" },
   "step_auto": { "message": "Auto" },
   "empty_lede": { "message": "Comece pela aba que está aberta. Eu mapeio os passos, mostro cada chamada de ferramenta e paro em um checkpoint antes de qualquer mudança." },
   "empty_preview": { "message": "Prévia da rota 3 passos" },

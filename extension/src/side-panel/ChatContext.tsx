@@ -417,24 +417,44 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
             });
           }
 
-          // 2. Create tool execution message
-          const toolMsg: DisplayMessage = {
-            id: nextId(),
-            role: 'tool',
-            content: '',
+          // 2. Append to the current route when possible: reuse the most recent
+          // tool message as long as no user message came after it, so one task
+          // renders as a single growing route card instead of duplicated blocks.
+          const toolExec = {
+            id: `tool_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
             name,
-            toolExecutions: [{
-              id: `tool_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-              name,
-              args,
-              status: 'running' as const,
-              timestamp: Date.now(),
-            }],
+            args,
+            status: 'running' as const,
             timestamp: Date.now(),
-            streaming: true,
           };
           setMessages((prev: DisplayMessage[]) => {
-            const updated = [...prev, toolMsg];
+            let targetIdx = -1;
+            for (let i = prev.length - 1; i >= 0; i--) {
+              const m = prev[i];
+              if (m.role === 'tool') { targetIdx = i; break; }
+              if (m.role === 'user') break;
+            }
+            let updated: DisplayMessage[];
+            if (targetIdx >= 0) {
+              updated = [...prev];
+              const prevToolMsg = updated[targetIdx];
+              updated[targetIdx] = {
+                ...prevToolMsg,
+                toolExecutions: [...(prevToolMsg.toolExecutions || []), toolExec],
+                streaming: true,
+              };
+            } else {
+              const newToolMsg: DisplayMessage = {
+                id: nextId(),
+                role: 'tool',
+                content: '',
+                name,
+                toolExecutions: [toolExec],
+                timestamp: Date.now(),
+                streaming: true,
+              };
+              updated = [...prev, newToolMsg];
+            }
             messagesRef.current = updated;
             return updated;
           });

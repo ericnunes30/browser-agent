@@ -228,6 +228,8 @@
   "step_now": { "message": "Now" },
   "step_next": { "message": "Next" },
   "route_empty": { "message": "Empty route" },
+  "route_older": { "message": "$COUNT$ earlier", "placeholders": { "COUNT": { "content": "$1" } } },
+  "route_collapse": { "message": "Collapse" },
   "step_auto": { "message": "Auto" },
   "empty_lede": { "message": "Start with the tab that's open. I'll map the steps, show every tool call, and stop at a checkpoint before anything changes." },
   "empty_preview": { "message": "Route preview 3 steps" },
