@@ -405,13 +405,18 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
         onToolStart: (name: string, args?: Record<string, unknown>) => {
           routeStepCountRef.current += 1;
           setRouteTotalSteps(routeStepCountRef.current);
-          // 1. Freeze current assistant message (remove streaming)
+          // 1. Freeze current assistant message (drop it if it ended up empty,
+          // so frozen placeholders never render as empty bubbles)
           const frozenId = currentAssistantIdRef.current;
           if (frozenId) {
             setMessages((prev: DisplayMessage[]) => {
-              const updated = prev.map((m: DisplayMessage) =>
-                m.id === frozenId ? { ...m, streaming: false } : m,
-              );
+              const frozen = prev.find((m) => m.id === frozenId);
+              const isEmpty = !frozen || (!(frozen.content || '').trim() && !(frozen.reasoning || '').trim());
+              const updated = isEmpty
+                ? prev.filter((m) => m.id !== frozenId)
+                : prev.map((m) =>
+                    m.id === frozenId ? { ...m, streaming: false } : m,
+                  );
               messagesRef.current = updated;
               return updated;
             });

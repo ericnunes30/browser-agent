@@ -70,7 +70,8 @@ export function getBaRouteStatus(): BaRouteState {
 }
 
 export function getBaRouteLabel(total: number): string {
-  return `Rota ${total} passos`;
+  if (total <= 0) return 'Rota';
+  return total === 1 ? 'Rota · 1 passo' : `Rota · ${total} passos`;
 }
 
 export function getBaRoutePausedLabel(step: number): string {
@@ -230,6 +231,7 @@ export async function sendChatPrompt(
           tool_call_id: tc.id,
           name: tc.name,
         });
+        wrappedCallbacks.onToolEnd?.(tc.name, toolContent);
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
         toolResultMessages.push({
@@ -238,6 +240,7 @@ export async function sendChatPrompt(
           tool_call_id: tc.id,
           name: tc.name,
         });
+        wrappedCallbacks.onToolEnd?.(tc.name, undefined, errMsg);
       }
     }
 
