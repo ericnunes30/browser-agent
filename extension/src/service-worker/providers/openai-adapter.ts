@@ -160,14 +160,15 @@ export class OpenAIAdapter implements ProviderAdapter {
       return;
     }
 
-    // Tool call arguments stream in fragments: the first delta usually carries
-    // only id/name with empty arguments, and the JSON arrives piecemeal after
-    // that. Accumulate per call id and announce only once the arguments parse,
-    // so the UI and the tool loop see complete args instead of {}.
-    const pendingCalls = new Map<string, { name: string; argsText: string; argsObj: unknown; fired: boolean }>();
+    // Tool call arguments stream in fragments, and per the OpenAI protocol only
+    // the first delta carries id/name — follow-up fragments carry just
+    // { index, function: { arguments } }. Accumulate per index so the first
+    // (usually empty) sighting doesn't win and later fragments aren't dropped.
+    // Announce once the arguments parse; flush the rest at stream end.
+    const pendingCalls = new Map<number, { id: string; name: string; argsText: string; argsObj: unknown; fired: boolean }>();
 
-    const fireToolStart = (id: string, force: boolean) => {
-      const entry = pendingCalls.get(id);
+    const fireToolStart = (index: number, force: boolean) => {
+      const entry = pendingCalls.get(index);
       if (!entry || entry.fired || !entry.name) return;
       let args: unknown;
       let ready = false;
@@ -191,12 +192,27 @@ export class OpenAIAdapter implements ProviderAdapter {
       }
       if (!ready) return;
       entry.fired = true;
-      callbacks.onToolStart?.(id, entry.name, args);
+      callbacks.onToolStart?.(entry.id || `call-${index}`, entry.name, args);
     };
 
     const flushToolStarts = () => {
-      for (const id of pendingCalls.keys()) fireToolStart(id, true);
+      for (const index of [...pendingCalls.keys()]) fireToolStart(index, true);
+      // TEMP DEBUG (remover após diagnóstico): mostra o que realmente chegou
+      // do gateway quando os args terminam vazios.
+      for (const [index, entry] of pendingCalls) {
+        if (!entry.fired) {
+          console.error(
+            `[SW-DBG] tool call sem args parseáveis (index=${index} name=${entry.name} ` +
+            `argsTextLen=${entry.argsText.length} head=${entry.argsText.slice(0, 120)})`,
+          );
+        }
+      }
+      pendingCalls.clear();
     };
+
+    // TEMP DEBUG (remover após diagnóstico): registra o formato cru do
+    // primeiro delta de tool_call para comparar com o esperado.
+    let loggedShape = false;
 
     try {
       for await (const event of parseSSE(response)) {
@@ -222,18 +238,27 @@ export class OpenAIAdapter implements ProviderAdapter {
 
         if (Array.isArray(delta?.tool_calls)) {
           for (const toolCall of delta.tool_calls) {
-            const id = toolCall?.id;
-            if (!id) continue;
-            let entry = pendingCalls.get(id);
-            if (!entry) {
-              entry = { name: '', argsText: '', argsObj: undefined, fired: false };
-              pendingCalls.set(id, entry);
+            if (!loggedShape) {
+              loggedShape = true;
+              try {
+                console.error(`[SW-DBG] tool_calls delta shape: ${JSON.stringify(toolCall).slice(0, 300)}`);
+              } catch {
+                console.error('[SW-DBG] tool_calls delta shape: <unserializable>');
+              }
             }
+            // Index is the stable key: follow-up fragments usually carry no id.
+            const index = typeof toolCall?.index === 'number' ? toolCall.index : 0;
+            let entry = pendingCalls.get(index);
+            if (!entry) {
+              entry = { id: '', name: '', argsText: '', argsObj: undefined, fired: false };
+              pendingCalls.set(index, entry);
+            }
+            if (typeof toolCall?.id === 'string' && toolCall.id && !entry.id) entry.id = toolCall.id;
             if (toolCall?.function?.name) entry.name = toolCall.function.name;
             const frag = toolCall?.function?.arguments;
             if (typeof frag === 'string') entry.argsText += frag;
             else if (frag !== undefined && frag !== null && typeof frag === 'object') entry.argsObj = frag;
-            fireToolStart(id, false);
+            fireToolStart(index, false);
           }
         }
 

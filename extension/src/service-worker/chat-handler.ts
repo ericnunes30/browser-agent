@@ -231,7 +231,7 @@ export async function sendChatPrompt(
           tool_call_id: tc.id,
           name: tc.name,
         });
-        wrappedCallbacks.onToolEnd?.(tc.name, toolContent);
+        wrappedCallbacks.onToolEnd?.(tc.name, toolContent, result.error);
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
         toolResultMessages.push({

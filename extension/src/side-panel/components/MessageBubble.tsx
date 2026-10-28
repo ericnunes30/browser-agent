@@ -322,19 +322,34 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
         }}
       >
         <span style={{ fontWeight: 600, color: isError ? '#D6472F' : '#121517' }}>{title}</span>
-        {action && (
+        {isError && exec.error ? (
           <span
             style={{
-              opacity: 0.85,
-              maxWidth: 220,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              color: '#5B6165',
+              color: '#D6472F',
+              maxWidth: 220,
             }}
+            title={String(exec.error)}
           >
-            {action}
+            {String(exec.error).slice(0, 80)}
           </span>
+        ) : (
+          action && (
+            <span
+              style={{
+                opacity: 0.85,
+                maxWidth: 220,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                color: '#5B6165',
+              }}
+            >
+              {action}
+            </span>
+          )
         )}
         <span style={{ marginLeft: 'auto' }}>
           <StatusChip state={state} />
