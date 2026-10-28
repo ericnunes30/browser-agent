@@ -292,6 +292,14 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
   const { title, detail: action } = getToolDisplay(exec);
   const isError = state === 'error';
   const isNow = state === 'now';
+  const [open, setOpen] = useState(false);
+  const rawArgs = (() => {
+    try {
+      return JSON.stringify(exec.args ?? {}, null, 2).slice(0, 500);
+    } catch {
+      return String(exec.args);
+    }
+  })();
 
   return (
     <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }} title={exec.name}>
@@ -306,6 +314,8 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
         )}
       </div>
       <div
+        onClick={() => setOpen((v) => !v)}
+        title={`${exec.name} — clique para ver os argumentos`}
         style={{
           flex: 1,
           minWidth: 0,
@@ -319,6 +329,7 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
           alignItems: 'center',
           gap: 8,
           flexWrap: 'wrap',
+          cursor: 'pointer',
         }}
       >
         <span style={{ fontWeight: 600, color: isError ? '#D6472F' : '#121517' }}>{title}</span>
@@ -354,6 +365,27 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
         <span style={{ marginLeft: 'auto' }}>
           <StatusChip state={state} />
         </span>
+        {open && (
+          <pre
+            style={{
+              width: '100%',
+              margin: '2px 0 0',
+              padding: '6px 8px',
+              background: '#F3F0E7',
+              borderRadius: 4,
+              fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+              fontSize: 10,
+              lineHeight: 1.5,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+              color: '#5B6165',
+              maxHeight: 120,
+              overflowY: 'auto',
+            }}
+          >
+            {rawArgs && rawArgs !== '{}' ? rawArgs : '(sem argumentos)'}
+          </pre>
+        )}
       </div>
     </div>
   );
