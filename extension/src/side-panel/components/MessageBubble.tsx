@@ -5,9 +5,7 @@ import { t } from '../../utils/i18n';
 
 function getToolAction(execution: ToolExecution): string {
   const args = execution.args || {};
-  if (execution.name === 'computer' && args.action) {
-    return String(args.action).replace(/_/g, ' ');
-  }
+  if (execution.name === 'computer') return '';
   if (execution.name === 'navigate' && args.url) {
     return '→ ' + String(args.url).slice(0, 40);
   }
@@ -30,6 +28,51 @@ function getToolAction(execution: ToolExecution): string {
     return String(args.query || args.selector || args.url || '').slice(0, 35);
   }
   return '';
+}
+
+/* ─── Computer action display ─────────────────────────────────── */
+/* The `computer` tool covers 7 browser actions. Show each one with its own
+   verb + useful detail instead of repeating the raw tool name. */
+
+function getComputerDisplay(args: Record<string, unknown>): { title: string; detail: string } {
+  const action = String(args.action || '');
+  switch (action) {
+    case 'click':
+      return { title: 'Clicar', detail: '' };
+    case 'fill':
+      return { title: 'Preencher', detail: args.text ? String(args.text).slice(0, 25) : '' };
+    case 'type':
+      return { title: 'Digitar', detail: args.text ? String(args.text).slice(0, 25) : '' };
+    case 'keypress': {
+      const keys = Array.isArray(args.keys) ? args.keys.map(String).join('+') : '';
+      return { title: 'Tecla', detail: keys };
+    }
+    case 'scroll': {
+      const d = Array.isArray(args.scroll_distance) ? args.scroll_distance.map(Number) : [0, 0];
+      const dx = d[0] || 0;
+      const dy = d[1] || 0;
+      let detail = '';
+      if (Math.abs(dy) >= Math.abs(dx) && dy !== 0) {
+        detail = `${dy > 0 ? '↓' : '↑'} ${Math.abs(dy)}px`;
+      } else if (dx !== 0) {
+        detail = `${dx > 0 ? '→' : '←'} ${Math.abs(dx)}px`;
+      }
+      return { title: 'Rolar', detail };
+    }
+    case 'wait': {
+      const ms = Number(args.duration) || 0;
+      return { title: 'Aguardar', detail: ms >= 1000 ? `${ms / 1000}s` : `${ms}ms` };
+    }
+    case 'screenshot':
+      return { title: 'Capturar tela', detail: '' };
+    default:
+      return {
+        title: action
+          ? action.charAt(0).toUpperCase() + action.slice(1).replace(/_/g, ' ')
+          : 'Computador',
+        detail: '',
+      };
+  }
 }
 
 type BaStepState = 'done' | 'now' | 'next' | 'error' | 'auto';
@@ -194,12 +237,15 @@ function StatusChip({ state }: { state: BaStepState }) {
 /* ─── Tool Execution Row — wayfinding route step ─────────────── */
 function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boolean }) {
   const state = stepStateFor(exec);
-  const action = getToolAction(exec);
+  const isComputer = exec.name === 'computer';
+  const computer = isComputer ? getComputerDisplay((exec.args || {}) as Record<string, unknown>) : null;
+  const title = computer ? computer.title : exec.name;
+  const action = computer ? computer.detail : getToolAction(exec);
   const isError = state === 'error';
   const isNow = state === 'now';
 
   return (
-    <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }}>
+    <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }} title={isComputer ? `computer · ${String((exec.args as Record<string, unknown> | undefined)?.action || '')}` : exec.name}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
         <RouteNode state={state} />
         {!isLast && (
@@ -226,7 +272,7 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
           flexWrap: 'wrap',
         }}
       >
-        <span style={{ fontWeight: 600, color: isError ? '#D6472F' : '#121517' }}>{exec.name}</span>
+        <span style={{ fontWeight: 600, color: isError ? '#D6472F' : '#121517' }}>{title}</span>
         {action && (
           <span
             style={{
