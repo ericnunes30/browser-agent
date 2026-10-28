@@ -153,16 +153,55 @@ export class OpenAIAdapter implements ProviderAdapter {
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      callbacks.onError(normalizeError(response, body));
+      callbacks.onError(
+        `${normalizeError(response, body)}\n(model "${params.model}" on "${endpoint.label}" — check the id in Options → Inspect Raw, or pick another model)`,
+      );
       callbacks.onDone();
       return;
     }
 
-    const startedToolCalls = new Set<string>();
+    // Tool call arguments stream in fragments: the first delta usually carries
+    // only id/name with empty arguments, and the JSON arrives piecemeal after
+    // that. Accumulate per call id and announce only once the arguments parse,
+    // so the UI and the tool loop see complete args instead of {}.
+    const pendingCalls = new Map<string, { name: string; argsText: string; argsObj: unknown; fired: boolean }>();
+
+    const fireToolStart = (id: string, force: boolean) => {
+      const entry = pendingCalls.get(id);
+      if (!entry || entry.fired || !entry.name) return;
+      let args: unknown;
+      let ready = false;
+      if (entry.argsObj !== undefined) {
+        args = entry.argsObj;
+        ready = true;
+      } else if (entry.argsText) {
+        try {
+          args = JSON.parse(entry.argsText);
+          ready = typeof args !== 'object' || args === null || Object.keys(args).length > 0 || force;
+        } catch {
+          if (!force) return; // wait for more fragments
+          args = entry.argsText;
+          ready = true;
+        }
+      } else if (force) {
+        args = {};
+        ready = true;
+      } else {
+        return;
+      }
+      if (!ready) return;
+      entry.fired = true;
+      callbacks.onToolStart?.(id, entry.name, args);
+    };
+
+    const flushToolStarts = () => {
+      for (const id of pendingCalls.keys()) fireToolStart(id, true);
+    };
 
     try {
       for await (const event of parseSSE(response)) {
         if (event.data === '[DONE]') {
+          flushToolStarts();
           callbacks.onDone();
           return;
         }
@@ -184,30 +223,29 @@ export class OpenAIAdapter implements ProviderAdapter {
         if (Array.isArray(delta?.tool_calls)) {
           for (const toolCall of delta.tool_calls) {
             const id = toolCall?.id;
-            if (!id || startedToolCalls.has(id)) continue;
-
-            startedToolCalls.add(id);
-            const name = toolCall?.function?.name ?? '';
-            let args: unknown = {};
-            const argString = toolCall?.function?.arguments;
-            if (typeof argString === 'string' && argString.length > 0) {
-              try {
-                args = JSON.parse(argString);
-              } catch {
-                args = argString;
-              }
+            if (!id) continue;
+            let entry = pendingCalls.get(id);
+            if (!entry) {
+              entry = { name: '', argsText: '', argsObj: undefined, fired: false };
+              pendingCalls.set(id, entry);
             }
-            callbacks.onToolStart?.(id, name, args);
+            if (toolCall?.function?.name) entry.name = toolCall.function.name;
+            const frag = toolCall?.function?.arguments;
+            if (typeof frag === 'string') entry.argsText += frag;
+            else if (frag !== undefined && frag !== null && typeof frag === 'object') entry.argsObj = frag;
+            fireToolStart(id, false);
           }
         }
 
         const finishReason = choice?.finish_reason;
         if (finishReason === 'stop') {
+          flushToolStarts();
           callbacks.onDone();
           return;
         }
 
         if (finishReason === 'tool_calls') {
+          flushToolStarts();
           callbacks.onToolEnd?.('', undefined, undefined);
           callbacks.onDone();
           return;

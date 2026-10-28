@@ -495,10 +495,18 @@ CRITICAL INSTRUCTIONS FOR RESPONSE FORMAT:
             if (lastIdx === -1) return prev;
             const execIdx = execs.length - 1 - lastIdx;
             const newExecs = [...execs];
+            const prevArgs = newExecs[execIdx].args || {};
             newExecs[execIdx] = {
               ...newExecs[execIdx],
               result,
               error,
+              // Adapters may deliver the complete arguments only at completion
+              // (Anthropic streams input_json_delta fragments). Merge them so
+              // the row shows what the tool actually received.
+              args:
+                typeof result === 'object' && result !== null && !Array.isArray(result)
+                  ? { ...prevArgs, ...(result as Record<string, unknown>) }
+                  : newExecs[execIdx].args,
               status: error ? 'error' : 'done' as const,
             };
             updated[actualIdx] = { ...toolMsg, toolExecutions: newExecs, streaming: false };
