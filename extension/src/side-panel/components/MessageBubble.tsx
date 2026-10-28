@@ -3,31 +3,83 @@ import type { DisplayMessage, ToolExecution } from '../ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { t } from '../../utils/i18n';
 
-function getToolAction(execution: ToolExecution): string {
-  const args = execution.args || {};
-  if (execution.name === 'computer') return '';
-  if (execution.name === 'navigate' && args.url) {
-    return '→ ' + String(args.url).slice(0, 40);
+function shortDomain(url: unknown): string {
+  const s = String(url || '');
+  try {
+    return new URL(s).hostname.replace(/^www\./, '');
+  } catch {
+    return s.replace(/^https?:\/\//, '').split('/')[0].slice(0, 40);
   }
-  if (execution.name === 'tabs_context') {
-    return 'listing tabs';
+}
+
+function baseName(p: unknown): string {
+  const parts = String(p || '').split(/[/\\]/);
+  return parts[parts.length - 1].slice(0, 30);
+}
+
+/* ─── Tool display names (PT) ───────────────────────────────────── */
+/* Friendly verb + useful detail per tool. Raw ids stay in tooltips. */
+
+function getToolDisplay(exec: ToolExecution): { title: string; detail: string } {
+  const args = (exec.args || {}) as Record<string, unknown>;
+  switch (exec.name) {
+    case 'computer':
+      return getComputerDisplay(args);
+    case 'take_snapshot':
+      return { title: 'Capturar tela', detail: '' };
+    case 'navigate':
+      if (args.direction === 'forward') return { title: 'Avançar', detail: '' };
+      if (args.direction === 'back') return { title: 'Voltar', detail: '' };
+      return { title: 'Abrir', detail: args.url ? shortDomain(args.url) : '' };
+    case 'javascript_tool':
+      return { title: 'Executar script', detail: '' };
+    case 'file_upload': {
+      const paths = Array.isArray(args.paths) ? args.paths.map(String) : [];
+      return {
+        title: 'Enviar arquivo',
+        detail: paths.length > 1 ? `${paths.length} arquivos` : baseName(paths[0]),
+      };
+    }
+    case 'get_page_text':
+      return { title: 'Ler texto', detail: '' };
+    case 'read_console_messages':
+      return { title: 'Ver console', detail: args.pattern ? String(args.pattern).slice(0, 25) : '' };
+    case 'read_network_requests':
+      return { title: 'Ver rede', detail: '' };
+    case 'resize_window':
+      return {
+        title: 'Redimensionar',
+        detail: args.width && args.height ? `${args.width}×${args.height}` : '',
+      };
+    case 'tabs_context':
+      return { title: 'Listar abas', detail: '' };
+    case 'tabs_create':
+      return { title: 'Abrir aba', detail: args.url ? shortDomain(args.url) : '' };
+    case 'browser_batch': {
+      const n = Array.isArray(args.actions) ? args.actions.length : 0;
+      return { title: 'Lote', detail: n > 0 ? `${n} ações` : '' };
+    }
+    case 'web_search':
+      return { title: 'Buscar', detail: args.query ? String(args.query).slice(0, 30) : '' };
+    case 'web_fetch':
+      return { title: 'Ler URL', detail: args.url ? shortDomain(args.url) : '' };
+    case 'download':
+      return {
+        title: 'Baixar',
+        detail: args.filename ? String(args.filename).slice(0, 30) : (args.url ? baseName(args.url) : ''),
+      };
+    case 'read_file':
+      return { title: 'Ler arquivo', detail: args.path ? baseName(args.path) : '' };
+    case 'create_file':
+      return { title: 'Criar arquivo', detail: args.path ? baseName(args.path) : '' };
+    case 'edit_file':
+      return { title: 'Editar arquivo', detail: args.path ? baseName(args.path) : '' };
+    default: {
+      const pretty = exec.name.charAt(0).toUpperCase() + exec.name.slice(1).replace(/_/g, ' ');
+      const q = args.query || args.selector || args.url;
+      return { title: pretty, detail: q ? String(q).slice(0, 35) : '' };
+    }
   }
-  if (execution.name === 'web_search' || execution.name === 'search') {
-    return args.query ? `${String(args.query).slice(0, 30)}` : 'searching';
-  }
-  if (execution.name === 'screenshot') {
-    return 'capturing screen';
-  }
-  if (execution.name === 'click' && args.selector) {
-    return `clicking ${String(args.selector).slice(0, 30)}`;
-  }
-  if (execution.name === 'type' && args.text) {
-    return `typing ${String(args.text).slice(0, 25)}`;
-  }
-  if (args.query || args.selector || args.url) {
-    return String(args.query || args.selector || args.url || '').slice(0, 35);
-  }
-  return '';
 }
 
 /* ─── Computer action display ─────────────────────────────────── */
@@ -237,15 +289,12 @@ function StatusChip({ state }: { state: BaStepState }) {
 /* ─── Tool Execution Row — wayfinding route step ─────────────── */
 function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boolean }) {
   const state = stepStateFor(exec);
-  const isComputer = exec.name === 'computer';
-  const computer = isComputer ? getComputerDisplay((exec.args || {}) as Record<string, unknown>) : null;
-  const title = computer ? computer.title : exec.name;
-  const action = computer ? computer.detail : getToolAction(exec);
+  const { title, detail: action } = getToolDisplay(exec);
   const isError = state === 'error';
   const isNow = state === 'now';
 
   return (
-    <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }} title={isComputer ? `computer · ${String((exec.args as Record<string, unknown> | undefined)?.action || '')}` : exec.name}>
+    <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }} title={exec.name}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
         <RouteNode state={state} />
         {!isLast && (
