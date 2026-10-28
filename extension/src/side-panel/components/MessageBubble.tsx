@@ -118,11 +118,11 @@ function getComputerDisplay(args: Record<string, unknown>): { title: string; det
     case 'screenshot':
       return { title: 'Capturar tela', detail: '' };
     default:
-      // TEMP DEBUG (reverter após o diagnóstico): em vez do rótulo genérico,
-      // exibe os args brutos para ver o que realmente chega do adapter.
       return {
-        title: `computer:${action || '?'}`,
-        detail: JSON.stringify(args).slice(0, 80),
+        title: action
+          ? action.charAt(0).toUpperCase() + action.slice(1).replace(/_/g, ' ')
+          : 'Computador',
+        detail: '',
       };
   }
 }
@@ -293,13 +293,26 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
   const isError = state === 'error';
   const isNow = state === 'now';
   const [open, setOpen] = useState(false);
-  const rawArgs = (() => {
+  // Curated args for the inspector: hide internal plumbing (tabId) and show
+  // only what explains what the tool did. Empty => "(sem argumentos)".
+  const HIDDEN_ARG_KEYS = ['tabId'];
+  const curatedArgs = (() => {
+    const out: Record<string, unknown> = {};
+    const src = (exec.args || {}) as Record<string, unknown>;
+    for (const [k, v] of Object.entries(src)) {
+      if (HIDDEN_ARG_KEYS.includes(k)) continue;
+      out[k] = v;
+    }
+    return out;
+  })();
+  const curatedJson = (() => {
     try {
-      return JSON.stringify(exec.args ?? {}, null, 2).slice(0, 500);
+      return JSON.stringify(curatedArgs, null, 2).slice(0, 500);
     } catch {
       return String(exec.args);
     }
   })();
+  const hasArgs = Object.keys(curatedArgs).length > 0;
 
   return (
     <div className="ba-step-in" style={{ display: 'flex', gap: 10, position: 'relative' }} title={exec.name}>
@@ -383,7 +396,7 @@ function ToolExecutionRow({ exec, isLast }: { exec: ToolExecution; isLast: boole
               overflowY: 'auto',
             }}
           >
-            {rawArgs && rawArgs !== '{}' ? rawArgs : '(sem argumentos)'}
+            {hasArgs ? curatedJson : '(sem argumentos)'}
           </pre>
         )}
       </div>

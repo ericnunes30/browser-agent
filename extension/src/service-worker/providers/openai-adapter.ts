@@ -197,22 +197,8 @@ export class OpenAIAdapter implements ProviderAdapter {
 
     const flushToolStarts = () => {
       for (const index of [...pendingCalls.keys()]) fireToolStart(index, true);
-      // TEMP DEBUG (remover após diagnóstico): mostra o que realmente chegou
-      // do gateway quando os args terminam vazios.
-      for (const [index, entry] of pendingCalls) {
-        if (!entry.fired) {
-          console.error(
-            `[SW-DBG] tool call sem args parseáveis (index=${index} name=${entry.name} ` +
-            `argsTextLen=${entry.argsText.length} head=${entry.argsText.slice(0, 120)})`,
-          );
-        }
-      }
       pendingCalls.clear();
     };
-
-    // TEMP DEBUG (remover após diagnóstico): registra o formato cru do
-    // primeiro delta de tool_call para comparar com o esperado.
-    let loggedShape = false;
 
     try {
       for await (const event of parseSSE(response)) {
@@ -238,14 +224,6 @@ export class OpenAIAdapter implements ProviderAdapter {
 
         if (Array.isArray(delta?.tool_calls)) {
           for (const toolCall of delta.tool_calls) {
-            if (!loggedShape) {
-              loggedShape = true;
-              try {
-                console.error(`[SW-DBG] tool_calls delta shape: ${JSON.stringify(toolCall).slice(0, 300)}`);
-              } catch {
-                console.error('[SW-DBG] tool_calls delta shape: <unserializable>');
-              }
-            }
             // Index is the stable key: follow-up fragments usually carry no id.
             const index = typeof toolCall?.index === 'number' ? toolCall.index : 0;
             let entry = pendingCalls.get(index);
