@@ -118,11 +118,11 @@ function getComputerDisplay(args: Record<string, unknown>): { title: string; det
     case 'screenshot':
       return { title: 'Capturar tela', detail: '' };
     default:
+      // TEMP DEBUG (reverter após o diagnóstico): em vez do rótulo genérico,
+      // exibe os args brutos para ver o que realmente chega do adapter.
       return {
-        title: action
-          ? action.charAt(0).toUpperCase() + action.slice(1).replace(/_/g, ' ')
-          : 'Computador',
-        detail: '',
+        title: `computer:${action || '?'}`,
+        detail: JSON.stringify(args).slice(0, 80),
       };
   }
 }
