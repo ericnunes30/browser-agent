@@ -26,7 +26,7 @@ function getToolDisplay(exec: ToolExecution): { title: string; detail: string } 
     case 'computer':
       return getComputerDisplay(args);
     case 'take_snapshot':
-      return { title: 'Capturar tela', detail: '' };
+      return { title: 'Mapear tela', detail: '' };
     case 'navigate':
       if (args.direction === 'forward') return { title: 'Avançar', detail: '' };
       if (args.direction === 'back') return { title: 'Voltar', detail: '' };
