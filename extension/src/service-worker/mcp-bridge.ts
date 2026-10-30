@@ -234,13 +234,10 @@ export function connectBridge(port?: number, token?: string): void {
   manualClose = false;
   void (async () => {
     const p = port ?? (await loadPort());
-    const t = token ?? (await loadToken());
+    const t = token ?? (await loadToken()) ?? '';
     currentPort = p;
-    if (!t) {
-      connStatus = 'disconnected';
-      lastError = 'Sem pareamento: informe o código de 6 dígitos do daemon.';
-      return;
-    }
+    // Sem token também disca: pré-pareamento o daemon aceita por
+    // trust-on-first-use e trava a janela no 1º handshake (SPEC §3).
     openSocket(p, t);
   })();
 }
@@ -248,9 +245,11 @@ export function connectBridge(port?: number, token?: string): void {
 function openSocket(port: number, token: string): void {
   connStatus = 'connecting';
   // MV3 ServiceWorker: WebSocket não permite header customizado, então o
-  // Bearer vai em `?token=` — o SPEC admite `?token=` no handshake inicial,
-  // e cada (re)connect é um handshake novo. Nunca vai para log.
-  const url = `ws://127.0.0.1:${port}/ws?token=${encodeURIComponent(token)}`;
+  // Bearer vai em `?token=` quando existe. Pré-pareamento disca sem token
+  // (trust-on-first-use, SPEC §3). Nunca vai para log.
+  const url = token
+    ? `ws://127.0.0.1:${port}/ws?token=${encodeURIComponent(token)}`
+    : `ws://127.0.0.1:${port}/ws`;
   let ws: WebSocket;
   try {
     ws = new WebSocket(url);
@@ -300,9 +299,22 @@ function onSocketDown(port: number, message: string): void {
     return;
   }
   if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-    // Após 60 falhas marca Disconnected e para (sem exit — SW não é processo).
-    connStatus = 'disconnected';
-    stopKeepAlive();
+    // Após 60 falhas rápidas, vira retry lento (30 s) para sempre — o daemon
+    // é on-demand e pode aparecer depois (agente spawnou). Só para manual.
+    connStatus = 'connecting';
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      reconnectAttempts = MAX_RECONNECT_ATTEMPTS; // mantém ritmo lento
+      if (manualClose) {
+        connStatus = 'disconnected';
+        stopKeepAlive();
+        return;
+      }
+      void (async () => {
+        openSocket(port, (await loadToken()) ?? '');
+      })();
+    }, 30000);
     return;
   }
   connStatus = 'connecting';
@@ -311,13 +323,12 @@ function onSocketDown(port: number, message: string): void {
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     void (async () => {
-      const t = await loadToken();
-      if (!t || manualClose) {
+      if (manualClose) {
         connStatus = 'disconnected';
         stopKeepAlive();
         return;
       }
-      openSocket(port, t);
+      openSocket(port, (await loadToken()) ?? '');
     })();
   }, RECONNECT_DELAY_MS);
 }

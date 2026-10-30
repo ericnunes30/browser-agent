@@ -760,12 +760,8 @@
     "message": "Off — starts with the agent",
     "description": "Daemon off"
   },
-  "bridge_connect_button": {
-    "message": "Connect",
-    "description": "One-click pair button"
-  },
-  "bridge_connect_failed": {
-    "message": "Connection failed",
-    "description": "Pair failed"
+  "bridge_connecting": {
+    "message": "Connecting on its own…",
+    "description": "MCP auto-connecting"
   }
 }

@@ -398,10 +398,12 @@ func ServeWS(h *Hub, expectedToken string, w http.ResponseWriter, r *http.Reques
 		// Only the initial pairing handshake may use ?token=.
 		token = r.URL.Query().Get("token")
 	}
-	// Accept the full pairing token or the derived 6-digit pairing code
-	// (the extension stores whichever the user typed and reuses it as
-	// Bearer on every reconnect; see auth.Accepts).
-	if !auth.Accepts(token, expectedToken) {
+	// Trust-on-first-use (SPEC §3): loopback SEM token passa uma única vez,
+	// antes de qualquer pareamento. O 1º handshake válido grava `paired`
+	// (via OnAuth) e trava a janela; depois disso, token sempre exigido.
+	if token == "" && !auth.IsPaired() {
+		// segue para o upgrade sem token
+	} else if !auth.Accepts(token, expectedToken) {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}

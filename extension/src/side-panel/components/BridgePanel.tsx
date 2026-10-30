@@ -13,7 +13,6 @@ interface DaemonStatus {
   ok: boolean;
   version: string;
   uptime_s: number;
-  pairingCode?: string;
   extension_connected?: boolean;
 }
 
@@ -22,14 +21,13 @@ async function send(type: string, extra?: Record<string, unknown>): Promise<any>
 }
 
 /**
- * Faixa MCP: 1 linha, zero console. Mostra estado, pareia com 6 dígitos
- * na 1ª vez e reconecta sozinha quando o daemon aparece.
+ * Faixa MCP: só status, zero ação. A conexão é direta e automática —
+ * a extensão disca o daemon sozinha (trust-on-first-use) e reconecta
+ * sozinha quando ele aparece. Nada para clicar ou digitar.
  */
 export function BridgePanel() {
   const [bridge, setBridge] = useState<BridgeState>({ status: 'disconnected', port: 18765, lastError: null });
   const [daemon, setDaemon] = useState<DaemonStatus | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const lastUptime = useRef<number>(-1);
 
   const refresh = useCallback(async () => {
@@ -37,8 +35,7 @@ export function BridgePanel() {
       const b = await send('bridge:getState');
       if (b?.ok) setBridge(b.bridge);
     } catch { /* SW ocupado, tenta no próximo ciclo */ }
-    // Caminho 1: via SW (vale para qualquer porta salva). Caminho 2: direto
-    // do painel (cobre SW dormindo ou router ainda não registrado).
+    // Caminho 1: via SW. Caminho 2: direto do painel (SW dormindo).
     try {
       const d = await send('bridge:getDaemonStatus');
       if (d?.ok) {
@@ -61,7 +58,7 @@ export function BridgePanel() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  // Auto-conecta quando o daemon aparece (ex.: agente acabou de spawnar).
+  // Garante a discagem quando o daemon aparece (ex.: agente acabou de spawnar).
   useEffect(() => {
     if (!daemon?.ok) return;
     if (bridge.status === 'connected') {
@@ -74,29 +71,18 @@ export function BridgePanel() {
     }
   }, [daemon, bridge.status, refresh]);
 
-  const connect = useCallback(async () => {
-    setBusy(true);
-    setErr(null);
-    try {
-      const r = await send('bridge:autopair');
-      if (r?.ok) {
-        refresh();
-      } else {
-        setErr(typeof r?.error === 'string' ? r.error : t('bridge_connect_failed'));
-      }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [refresh]);
-
-  const dot = bridge.status === 'connected' ? '#1E9E6A' : daemon?.ok ? '#E19A2E' : '#B9B4A8';
-  const needsPairing = daemon?.ok && bridge.status !== 'connected';
+  const dot = bridge.status === 'connected' ? '#1E9E9A' : bridge.status === 'connecting' ? '#E19A2E' : '#B9B4A8';
+  const label =
+    bridge.status === 'connected'
+      ? t('bridge_connected')
+      : bridge.status === 'connecting'
+        ? t('bridge_connecting')
+        : t('bridge_off');
 
   return (
     <div
       data-testid="ba-bridge-panel"
+      title={bridge.lastError ?? ''}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -113,35 +99,7 @@ export function BridgePanel() {
         style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }}
       />
       <span style={{ fontWeight: 600, color: '#121517', whiteSpace: 'nowrap' }}>MCP</span>
-      {bridge.status === 'connected' ? (
-        <span>{t('bridge_connected')}</span>
-      ) : needsPairing ? (
-        <>
-          <button
-            onClick={connect}
-            disabled={busy}
-            style={{
-              padding: '2px 10px',
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#fff',
-              background: '#1E46E8',
-              border: 'none',
-              borderRadius: 4,
-              cursor: busy ? 'default' : 'pointer',
-            }}
-          >
-            {t('bridge_connect_button')}
-          </button>
-          {err && (
-            <span style={{ color: '#D6472F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={err}>
-              {err}
-            </span>
-          )}
-        </>
-      ) : (
-        <span>{t('bridge_off')}</span>
-      )}
+      <span>{label}</span>
     </div>
   );
 }

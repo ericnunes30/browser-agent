@@ -760,12 +760,8 @@
     "message": "Desligado — liga sozinho com o agente",
     "description": "Daemon off"
   },
-  "bridge_connect_button": {
-    "message": "Conectar",
-    "description": "One-click pair button"
-  },
-  "bridge_connect_failed": {
-    "message": "Conexão falhou",
-    "description": "Pair failed"
+  "bridge_connecting": {
+    "message": "Conectando sozinho…",
+    "description": "MCP auto-connecting"
   }
 }
