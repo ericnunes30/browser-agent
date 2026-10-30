@@ -37,13 +37,22 @@ export function BridgePanel() {
       const b = await send('bridge:getState');
       if (b?.ok) setBridge(b.bridge);
     } catch { /* SW ocupado, tenta no próximo ciclo */ }
+    // Caminho 1: via SW (vale para qualquer porta salva). Caminho 2: direto
+    // do painel (cobre SW dormindo ou router ainda não registrado).
     try {
       const d = await send('bridge:getDaemonStatus');
-      if (d?.ok) setDaemon(d.daemon);
-      else setDaemon(null);
-    } catch {
-      setDaemon(null);
-    }
+      if (d?.ok) {
+        setDaemon(d.daemon);
+        return;
+      }
+    } catch { /* cai para o direto */ }
+    try {
+      const res = await fetch('http://127.0.0.1:18765/status');
+      if (res.ok) {
+        const body = await res.json();
+        if (body?.ok) setDaemon(body);
+      }
+    } catch { /* daemon desligado */ }
   }, []);
 
   useEffect(() => {
