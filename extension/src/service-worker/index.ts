@@ -7,12 +7,16 @@ import { setCachedActiveTabId, getCachedActiveTabId } from './active-tab';
 import { handleChatSend } from './chat-handler';
 import { handleChatStream } from './chat-stream';
 import { registerMessageRouter } from './message-router';
+import { initMcpBridge } from './mcp-bridge';
 
 /* ──── Side panel state tracking ─────────────────────────────────── */
 let isSidePanelOpen = false;
 
 /* ──── Register message router ────────────────────────────────────── */
 registerMessageRouter();
+
+/* MCP bridge (daemon on-demand): WS dial-out + bridge:* router */
+initMcpBridge();
 
 /* ──── Tab group auto-recreate on external destruction ───────────── */
 
