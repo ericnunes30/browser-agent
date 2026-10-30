@@ -1793,7 +1793,9 @@ async function captureScreenshot(tabId: number): Promise<string> {
     const tab = await chrome.tabs.get(tabId);
     if (tab.windowId !== undefined) {
       try {
-        await chrome.windows.update(tab.windowId, { focused: true });
+        // focused sozinho NÃO desminimiza; sem state:'normal' a janela
+        // minimizada faz o capture pendurar para sempre (sem resolve/reject).
+        await chrome.windows.update(tab.windowId, { focused: true, state: 'normal' });
       } catch { /* segue: tenta capturar mesmo assim */ }
       try {
         await chrome.tabs.update(tabId, { active: true });
