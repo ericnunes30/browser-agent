@@ -46,9 +46,8 @@ func configPath(client string) string {
 	case ClientClaudeCode:
 		return filepath.Join(h, ".claude.json")
 	case ClientOpencode:
-		if runtime.GOOS == "windows" {
-			return filepath.Join(os.Getenv("APPDATA"), "opencode", "opencode.json")
-		}
+		// Opencode global user config lives under ~/.config on every OS
+		// (verified: doop/gw/pencil entries live there on Windows too).
 		return filepath.Join(h, ".config", "opencode", "opencode.json")
 	case ClientClaudeDesktop:
 		if runtime.GOOS == "windows" {
