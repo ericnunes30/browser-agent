@@ -119,11 +119,13 @@ export class DebuggerSessionManager {
    * Works on ANY tab — not just the active tab!
    */
   async captureScreenshot(tabId: number): Promise<string> {
+    // Receita provada (Claude in Chrome): JPEG q60 sem fromSurface —
+    // PNG e fromSurface já travaram o capture em janela oculta/minimizada.
     const result = await this.sendCommand(tabId, "Page.captureScreenshot", {
-      format: "png",
-      fromSurface: true,
+      format: "jpeg",
+      quality: 60,
     });
-    return result.data; // base64-encoded PNG
+    return result.data; // base64-encoded JPEG
   }
 
   /**

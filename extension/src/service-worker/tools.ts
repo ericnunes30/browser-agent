@@ -1787,10 +1787,11 @@ function withTimeout15s<T>(p: Promise<T>): Promise<T> {
 async function captureScreenshot(tabId: number): Promise<string> {
   try {
     // Try captureVisibleTab first (simpler, more reliable, Claude-compatible)
+    // JPEG q60: menor e mais rápido que PNG; PNG full-res já travou o capture.
     const tab = await chrome.tabs.get(tabId);
     if (tab.active && tab.windowId !== undefined) {
-      const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-      return dataUrl; // Already in data:image/png;base64,... format
+      const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 60 });
+      return dataUrl; // Already in data:image/jpeg;base64,... format
     }
   } catch {
     // Fall through to CDP approach
