@@ -6,3 +6,7 @@ Thumbs.db
 *.zip
 .msg
 .pid
+
+# CRX signing key (private, per-machine)
+extension/key.pem
+*.pem
