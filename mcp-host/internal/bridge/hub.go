@@ -405,6 +405,7 @@ func ServeWS(h *Hub, expectedToken string, w http.ResponseWriter, r *http.Reques
 	if token == "" && !auth.IsPaired() {
 		tofu = true // segue para o upgrade sem token
 	} else if !auth.Accepts(token, expectedToken) {
+		h.log.Log("warn", "ws rejected (bad token)", "", nil, nil)
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}

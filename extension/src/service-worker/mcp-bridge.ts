@@ -708,8 +708,9 @@ export function registerMcpBridgeRouter(): void {
  */
 export function initMcpBridge(): void {
   registerMcpBridgeRouter();
+  // Sempre disca no boot do SW: pré-pareamento o daemon aceita via TOFU,
+  // pós-pareamento o token guardado (welcome) autentica. Sem gate de token.
   void (async () => {
-    const token = await loadToken();
-    if (token) connectBridge(await loadPort(), token);
+    connectBridge(await loadPort());
   })();
 }
