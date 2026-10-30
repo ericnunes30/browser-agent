@@ -6,6 +6,7 @@ import { ChatProvider, useChat } from './ChatContext';
 import { PermissionPrompt } from './components/PermissionPrompt';
 import { TaskManager } from './components/TaskManager';
 import { ContinuePrompt } from './components/ContinuePrompt';
+import { t } from '../utils/i18n';
 
 function AppInner() {
   const { pendingPermission, respondPermission, hasNewModels, reloadModels, routeStatus, routePausedStep, routeTotalSteps } = useChat();
@@ -31,8 +32,12 @@ function AppInner() {
     setShowTasks((prev) => !prev);
   }, []);
 
-  const routeLabel = routeTotalSteps > 0 ? `Rota ${routeTotalSteps} passos` : 'Rota';
-  const pausedLabel = routePausedStep !== null ? `Rota pausada no passo ${routePausedStep}.` : null;
+  const routeLabel = routeTotalSteps > 0
+    ? routeTotalSteps === 1
+      ? t('route_steps_one')
+      : t('route_steps_other', String(routeTotalSteps))
+    : t('route_title');
+  const pausedLabel = routePausedStep !== null ? t('route_paused', String(routePausedStep)) : null;
 
   return (
     <>

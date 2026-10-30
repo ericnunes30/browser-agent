@@ -14,6 +14,48 @@ export function BaBrandMark({ size = 24 }: { size?: 16 | 24 | 40 | 56 | number }
   );
 }
 
+/* ─── Friendly model display names ──────────────────────────────── */
+/* "opencode-go/muse-spark-1.3-contributor" -> "Muse Spark 1.3 Contributor".
+   Raw ids stay untouched in `activeModel` (API calls) and tooltips. */
+
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  'muse-spark-1.3-contributor': 'Muse Spark 1.3 Contributor',
+  'muse-spark-1.2-contributor': 'Muse Spark 1.2 Contributor',
+  'deepseek-v4.1-flash': 'DeepSeek V4.1 Flash',
+  'deepseek-v4.1-flash-free': 'DeepSeek V4.1 Flash (Free)',
+  'big-pickle': 'Big Pickle',
+  'gpt-4o': 'GPT-4o',
+  'o3': 'o3',
+  'claude-sonnet-4-5': 'Claude Sonnet 4.5',
+  'claude-opus-4-1': 'Claude Opus 4.1',
+  'claude-haiku-3-5': 'Claude Haiku 3.5',
+};
+
+const MODEL_ACRONYMS: Record<string, string> = {
+  gpt: 'GPT',
+  api: 'API',
+  llm: 'LLM',
+};
+
+function prettifyModelId(id: string): string {
+  return id
+    .split(/[-_]+/)
+    .map((tok) => {
+      if (/^\d/.test(tok)) return tok;
+      const low = tok.toLowerCase();
+      if (MODEL_ACRONYMS[low]) return MODEL_ACRONYMS[low];
+      return tok.charAt(0).toUpperCase() + tok.slice(1);
+    })
+    .join(' ');
+}
+
+function displayModelName(model: string, providerId: string): string {
+  const short = model.startsWith(`${providerId}/`)
+    ? model.slice(providerId.length + 1)
+    : model;
+  return MODEL_DISPLAY_NAMES[short] ?? MODEL_DISPLAY_NAMES[model] ?? prettifyModelId(short);
+}
+
 export default function Header({
   onSettingsClick,
   onTasksClick,
@@ -36,7 +78,10 @@ export default function Header({
     const filtered = !q
       ? providers
       : providers
-          .map((p) => ({ ...p, models: p.models.filter((m) => m.toLowerCase().includes(q)) }))
+          .map((p) => ({ ...p, models: p.models.filter((m) =>
+            m.toLowerCase().includes(q) ||
+            displayModelName(m, p.id).toLowerCase().includes(q),
+          ) }))
           .filter((p) => p.models.length > 0);
     return filtered;
   }, [providers, searchQuery]);
@@ -63,6 +108,15 @@ export default function Header({
 
   const currentProvider = providers.find(p => p.id === activeProvider);
 
+  const modelTitle = currentProvider
+    ? `${currentProvider.name} · ${activeModel}`
+    : activeModel;
+
+  const hasModel = activeModel.trim().length > 0;
+  const modelLabel = hasModel
+    ? displayModelName(activeModel, activeProvider)
+    : t('models_select');
+
   return (
     <div
       className="ba-header"
@@ -78,11 +132,14 @@ export default function Header({
       }}
     >
       {/* Left: Brand + Model Selector + Tab chip */}
-      <div ref={menuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <BaBrandMark size={24} />
+      <div ref={menuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        <span style={{ flexShrink: 0, display: 'inline-flex' }}>
+          <BaBrandMark size={24} />
+        </span>
         <button
           onClick={() => setModelMenuOpen(!modelMenuOpen)}
           className="ba-model-btn"
+          title={modelTitle}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -93,19 +150,30 @@ export default function Header({
             border: 'none',
             color: '#121517',
             cursor: 'pointer',
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
+            minWidth: 0,
+            flexShrink: 1,
+            overflow: 'hidden',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 600 }}>
-            {currentProvider ? `${currentProvider.name}: ${activeModel}` : activeModel}
+          <span style={{
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            minWidth: 0,
+            color: hasModel ? '#121517' : '#5B6165',
+          }}>
+            {modelLabel}
           </span>
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#5B6165' }}>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#5B6165', flexShrink: 0 }}>
             <path d={modelMenuOpen ? 'M12 10l-4-4-4 4' : 'M4 6l4 4 4-4'} />
           </svg>
         </button>
 
-        <span className="ba-tab-chip" title={t('tab_active')}>
+        <span className="ba-tab-chip" title={t('tab_active')} style={{ flexShrink: 0 }}>
           <span className="ba-tab-chip-dot" aria-hidden="true" />
           <span>{t('tab_chip')}</span>
         </span>
@@ -196,6 +264,8 @@ export default function Header({
                         </div>
                         {p.models.map((model) => {
                           const isActive = activeProvider === p.id && activeModel === model;
+                          const label = displayModelName(model, p.id);
+                          const showRawId = label !== model;
                           return (
                             <div
                               key={`${p.id}-${model}`}
@@ -204,6 +274,7 @@ export default function Header({
                                 setModelMenuOpen(false);
                                 setSearchQuery('');
                               }}
+                              title={model}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -229,7 +300,23 @@ export default function Header({
                                 }
                               }}
                             >
-                              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{model}</span>
+                              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                                {showRawId && (
+                                  <span style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+                                    fontSize: 10,
+                                    color: '#5B6165',
+                                    marginTop: 1,
+                                  }}>
+                                    {model}
+                                  </span>
+                                )}
+                              </span>
                               {isActive && (
                                 <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
                                   <path d="M13.5 3.5L6 11l-3.5-3.5" stroke="currentColor" strokeWidth="2" fill="none" />
@@ -273,7 +360,7 @@ export default function Header({
       </div>
 
       {/* Right: buttons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
         {/* Stop button (visible during streaming) */}
         {isStreaming && (
           <button
