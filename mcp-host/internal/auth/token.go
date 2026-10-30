@@ -96,6 +96,7 @@ func LoadOrCreate() (token string, created bool, err error) {
 }
 
 // Reset regenerates the token, invalidating previously paired extensions.
+// It also clears the paired marker so one-click pairing reopens once.
 func Reset() (string, error) {
 	token, err := generate()
 	if err != nil {
@@ -104,7 +105,25 @@ func Reset() (string, error) {
 	if err := writeToken(token); err != nil {
 		return "", err
 	}
+	_ = os.Remove(PairedPath())
 	return token, nil
+}
+
+// PairedPath marks that one-click pairing already happened (SPEC §3).
+// Persisted so a daemon restart does not reopen the pairing window.
+func PairedPath() string { return filepath.Join(DataDir(), "paired") }
+
+// IsPaired reports whether one-click pairing already claimed this daemon.
+func IsPaired() bool {
+	_, err := os.Stat(PairedPath())
+	return err == nil
+}
+
+// MarkPaired closes the one-click pairing window. Best-effort: a missing
+// data dir must not break the WS handshake.
+func MarkPaired() {
+	_ = os.MkdirAll(DataDir(), 0o700)
+	_ = os.WriteFile(PairedPath(), []byte("1"), 0o600)
 }
 
 // Validate compares a presented bearer against the expected token.

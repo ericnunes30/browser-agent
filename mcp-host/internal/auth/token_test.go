@@ -66,3 +66,20 @@ func TestReset(t *testing.T) {
 		t.Fatal("validate broken")
 	}
 }
+
+func TestPairedMarker(t *testing.T) {
+	withTempData(t)
+	if IsPaired() {
+		t.Fatal("fresh data dir must be unpaired")
+	}
+	MarkPaired()
+	if !IsPaired() {
+		t.Fatal("MarkPaired must close the window")
+	}
+	if _, err := Reset(); err != nil {
+		t.Fatal(err)
+	}
+	if IsPaired() {
+		t.Fatal("Reset must reopen the window")
+	}
+}

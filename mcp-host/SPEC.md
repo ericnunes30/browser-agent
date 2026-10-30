@@ -34,7 +34,7 @@ Nada fora de `mcp-host/` nesta fase. Lado extensão = só o cliente WS
 |---|---|
 | MCP stdio | `daemon --stdio`: ciclo de vida on-demand (padrão). O agente spawna o daemon ao abrir a conexão MCP; stdin EOF encerra a sessão e o daemon sai por completo (HTTP+WS junto). Nada fica residente. `daemon start` existe só para instância persistente explícita. |
 | MCP HTTP | `POST http://127.0.0.1:<porta>/mcp` Streamable HTTP (`"type":"streamableHttp"`). `tools/list` + `tools/call` a partir do subset piloto (seção 7), `input_schema` validado no daemon antes de enviar à extensão. |
-| Pareamento/token | Na 1ª boot gera 32 bytes `crypto/rand` hex em `%APPDATA%/BrowserAgent/token` (0600 equivalente, ACL usuário). Imprime pairing code de 6 dígitos no stdout + `/status`. Extensão pede o código uma vez, guarda em `chrome.storage.local`, usa como Bearer depois. `daemon --reset-token` regenera. |
+| Pareamento/token | Na 1ª boot gera 32 bytes `crypto/rand` hex em `%APPDATA%/BrowserAgent/token` (0600). **1 clique, zero digitação**: `POST /pair` (só loopback) devolve o token enquanto ninguém pareou; o 1º handshake `/ws` válido grava `paired` e trava a janela (persiste restart). `daemon --reset-token` regenera tudo e reabre. Código de 6 dígitos segue existindo (stdout + `/status`) só como fallback. |
 | Fila | `queue/queue.go`: FIFO por `tabId`, 1 request in-flight por tab; tabs diferentes em paralelo. `browser_batch` continua sequencial dentro da extensão (`tools.ts:1721-1734`, sem aninhar). |
 | Logs | JSONL `{ts,level,msg,tool,tabId,latencyMs}` em `%APPDATA%/BrowserAgent/logs/`. `GET /status` expõe `lastError` + `uptime`. Sem PII de página (só url domain). |
 | Upgrade | `daemon upgrade [--check]`: compara versão local × endpoint release, baixa `.exe`, valida sha256, troca atômica, reinicia. Nunca auto-upgrada sem comando. |
@@ -51,6 +51,7 @@ Bind: `127.0.0.1` apenas. Se o bind falhar por `EADDRINUSE`, aplicar seção 6
 |---|---|---|---|
 | `GET` | `/status` | nenhuma | Healthcheck mínimo: `200 {"ok":true,"version":"x.y.z","primary":bool,"port":18765,"tabs":n,"uptime_s":n,"lastError":null\|str}`. A extensão mostra "Connected" a partir daqui (fluxo 8). Sem PII. |
 | `GET` | `/ws` → WS | `Authorization: Bearer <token>` (ou `?token=` só no handshake inicial de pareamento) | **Único canal extensão↔daemon.** A extensão disca; o daemon nunca disca de volta. Sem token válido → `403` e fecha (padrão Kimi, fluxo 6). |
+| `POST` | `/pair` | nenhuma (só loopback; 403 após pareado) | Pareamento em 1 clique: devolve `{"ok":true,"token"}` enquanto `paired` não existe; o 1º `/ws` válido grava `paired`. |
 | `POST` | `/mcp` | mesma do MCP client (localhost implícito; Bearer opcional se `--mcp-auth`) | Streamable HTTP JSON-RPC para clientes MCP com HTTP (fluxo 1). |
 
 Porta: `--port` (default `18765`, fluxo 4) > `~/.config/open-claude-in-chrome/config.json:{port}`-style `config.json` (`%APPDATA%/BrowserAgent/config.json:{port}`) > default. Arquivo de token: `%APPDATA%/BrowserAgent/token` (Windows) / `$HOME/.config/browser-agent/token` (linux/mac).

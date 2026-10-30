@@ -756,28 +756,16 @@
     "message": "Conectado ao browser",
     "description": "MCP bridge connected"
   },
-  "bridge_pair_title": {
-    "message": "Código do daemon:",
-    "description": "Prompt for pairing code"
-  },
-  "bridge_code_placeholder": {
-    "message": "6 dígitos",
-    "description": "Pairing code placeholder"
-  },
-  "bridge_code_invalid": {
-    "message": "Digite os 6 dígitos",
-    "description": "Invalid code error"
-  },
-  "bridge_pair_button": {
-    "message": "Parear",
-    "description": "Pair button"
-  },
-  "bridge_pair_failed": {
-    "message": "Pareamento falhou",
-    "description": "Pair failed"
-  },
   "bridge_off": {
     "message": "Desligado — liga sozinho com o agente",
     "description": "Daemon off"
+  },
+  "bridge_connect_button": {
+    "message": "Conectar",
+    "description": "One-click pair button"
+  },
+  "bridge_connect_failed": {
+    "message": "Conexão falhou",
+    "description": "Pair failed"
   }
 }

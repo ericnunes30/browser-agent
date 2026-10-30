@@ -28,7 +28,6 @@ async function send(type: string, extra?: Record<string, unknown>): Promise<any>
 export function BridgePanel() {
   const [bridge, setBridge] = useState<BridgeState>({ status: 'disconnected', port: 18765, lastError: null });
   const [daemon, setDaemon] = useState<DaemonStatus | null>(null);
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const lastUptime = useRef<number>(-1);
@@ -66,28 +65,22 @@ export function BridgePanel() {
     }
   }, [daemon, bridge.status, refresh]);
 
-  const pair = useCallback(async () => {
-    const digits = code.replace(/\D/g, '').slice(0, 6);
-    if (digits.length !== 6) {
-      setErr(t('bridge_code_invalid'));
-      return;
-    }
+  const connect = useCallback(async () => {
     setBusy(true);
     setErr(null);
     try {
-      const r = await send('bridge:pair', { code: digits });
+      const r = await send('bridge:autopair');
       if (r?.ok) {
-        setCode('');
         refresh();
       } else {
-        setErr(typeof r?.error === 'string' ? r.error : t('bridge_pair_failed'));
+        setErr(typeof r?.error === 'string' ? r.error : t('bridge_connect_failed'));
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
-  }, [code, refresh]);
+  }, [refresh]);
 
   const dot = bridge.status === 'connected' ? '#1E9E6A' : daemon?.ok ? '#E19A2E' : '#B9B4A8';
   const needsPairing = daemon?.ok && bridge.status !== 'connected';
@@ -115,41 +108,21 @@ export function BridgePanel() {
         <span>{t('bridge_connected')}</span>
       ) : needsPairing ? (
         <>
-          <span style={{ whiteSpace: 'nowrap' }}>{t('bridge_pair_title')}</span>
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            onKeyDown={(e) => { if (e.key === 'Enter') pair(); }}
-            placeholder={t('bridge_code_placeholder')}
-            inputMode="numeric"
-            maxLength={6}
-            aria-label={t('bridge_code_placeholder')}
-            style={{
-              width: 72,
-              padding: '2px 6px',
-              fontSize: 11,
-              fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-              letterSpacing: 2,
-              border: '1px solid #DCD9CF',
-              borderRadius: 4,
-              background: '#fff',
-            }}
-          />
           <button
-            onClick={pair}
-            disabled={busy || code.length !== 6}
+            onClick={connect}
+            disabled={busy}
             style={{
               padding: '2px 10px',
               fontSize: 11,
               fontWeight: 600,
               color: '#fff',
-              background: code.length === 6 ? '#1E46E8' : '#B9B4A8',
+              background: '#1E46E8',
               border: 'none',
               borderRadius: 4,
-              cursor: code.length === 6 ? 'pointer' : 'default',
+              cursor: busy ? 'default' : 'pointer',
             }}
           >
-            {t('bridge_pair_button')}
+            {t('bridge_connect_button')}
           </button>
           {err && (
             <span style={{ color: '#D6472F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={err}>

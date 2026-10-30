@@ -152,10 +152,35 @@ function isFullToken(v: string): boolean {
 }
 
 /**
- * Pareamento: o usuário digita o código de 6 dígitos exibido pelo daemon
- * (stdout + /status) uma única vez. Guarda em `chrome.storage.local` e
- * usa como Bearer nas conexões seguintes.
+ * Pareamento em 1 clique: pede o token ao daemon via POST /pair (só
+ * loopback, só enquanto ninguém pareou). Guarda em `chrome.storage.local`
+ * e conecta. Zero digitação.
  */
+export async function autoPairBridge(
+  port?: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const p = port ?? (await loadPort());
+  let res: Response;
+  try {
+    res = await fetch(`http://127.0.0.1:${p}/pair`, { method: 'POST' });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+  if (res.status === 403) {
+    return { ok: false, error: 'Daemon já pareado em outro lugar (use --reset-token nele).' };
+  }
+  if (!res.ok) return { ok: false, error: `POST /pair retornou HTTP ${res.status}` };
+  const body = (await res.json()) as { ok?: boolean; token?: unknown };
+  if (body?.ok !== true || typeof body.token !== 'string' || !isFullToken(body.token)) {
+    return { ok: false, error: 'Resposta de /pair inválida' };
+  }
+  currentPort = p;
+  await chrome.storage.local.set({ [TOKEN_KEY]: body.token, [PORT_KEY]: p });
+  manualClose = false;
+  connectBridge(p, body.token);
+  return { ok: true };
+}
+
 export async function pairBridge(
   code: string,
   port?: number,
@@ -619,6 +644,14 @@ export function registerMcpBridgeRouter(): void {
 
       case 'bridge:pair':
         pairBridge(String(msg.code ?? ''), msg.port)
+          .then((r) => sendResponse(r))
+          .catch((err: unknown) =>
+            sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) }),
+          );
+        return true;
+
+      case 'bridge:autopair':
+        autoPairBridge(msg.port)
           .then((r) => sendResponse(r))
           .catch((err: unknown) =>
             sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) }),

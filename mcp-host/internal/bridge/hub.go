@@ -47,6 +47,10 @@ type Hub struct {
 	log     *logs.Logger
 	start   time.Time
 
+	// OnAuth runs once per successful /ws handshake (used by the daemon to
+	// close the one-click pairing window). Nil-safe; never blocks the loop.
+	OnAuth func()
+
 	errTimes []time.Time
 }
 
@@ -430,6 +434,9 @@ func ServeWS(h *Hub, expectedToken string, w http.ResponseWriter, r *http.Reques
 	}
 	rc := &rawConn{conn: conn}
 	h.SetExtension(rc)
+	if h.OnAuth != nil {
+		h.OnAuth()
+	}
 	defer h.ClearExtension()
 	defer conn.Close()
 

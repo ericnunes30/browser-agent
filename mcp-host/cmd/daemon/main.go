@@ -146,12 +146,28 @@ func serveCmd(args []string) int {
 	}
 
 	hub := bridge.NewHub(queue.New(), lg)
+	hub.OnAuth = auth.MarkPaired // first valid handshake closes one-click pairing
 	mcpSrv := mcp.New(hub, lg, version)
 	mcpSrv.McpAuth = *mcpAuth
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		statusJSON(w, hub, lg, actualPort, code)
+	})
+	mux.HandleFunc("/pair", func(w http.ResponseWriter, r *http.Request) {
+		// One-click pairing (SPEC §3): loopback-only, POST, single-slot.
+		// Returns the token while nobody paired yet; 403 afterwards.
+		// Same-machine threat model: the window closes on first use.
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if auth.IsPaired() {
+			http.Error(w, "already paired (use --reset-token to reopen)", http.StatusForbidden)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "token": token})
 	})
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		bridge.ServeWS(hub, token, w, r)

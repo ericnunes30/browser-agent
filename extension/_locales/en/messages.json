@@ -756,28 +756,16 @@
     "message": "Connected to browser",
     "description": "MCP bridge connected"
   },
-  "bridge_pair_title": {
-    "message": "Daemon code:",
-    "description": "Prompt for pairing code"
-  },
-  "bridge_code_placeholder": {
-    "message": "6 digits",
-    "description": "Pairing code placeholder"
-  },
-  "bridge_code_invalid": {
-    "message": "Enter the 6 digits",
-    "description": "Invalid code error"
-  },
-  "bridge_pair_button": {
-    "message": "Pair",
-    "description": "Pair button"
-  },
-  "bridge_pair_failed": {
-    "message": "Pairing failed",
-    "description": "Pair failed"
-  },
   "bridge_off": {
     "message": "Off — starts with the agent",
     "description": "Daemon off"
+  },
+  "bridge_connect_button": {
+    "message": "Connect",
+    "description": "One-click pair button"
+  },
+  "bridge_connect_failed": {
+    "message": "Connection failed",
+    "description": "Pair failed"
   }
 }
