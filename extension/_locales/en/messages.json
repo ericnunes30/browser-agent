@@ -751,17 +751,5 @@
   },
   "attach_remove": {
     "message": "Remove"
-  },
-  "bridge_connected": {
-    "message": "Connected to browser",
-    "description": "MCP bridge connected"
-  },
-  "bridge_off": {
-    "message": "Off — starts with the agent",
-    "description": "Daemon off"
-  },
-  "bridge_connecting": {
-    "message": "Connecting on its own…",
-    "description": "MCP auto-connecting"
   }
 }

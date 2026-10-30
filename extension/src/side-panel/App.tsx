@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Header from './components/Header';
-import { BridgePanel } from './components/BridgePanel';
 import ChatWindow from './components/ChatWindow';
 import ChatInput from './components/ChatInput';
 import { ChatProvider, useChat } from './ChatContext';
@@ -58,7 +57,6 @@ function AppInner() {
           hasNewModels={hasNewModels}
           onReloadModels={reloadModels}
         />
-        <BridgePanel />
         <span
           aria-live="polite"
           data-testid="ba-route-status"
