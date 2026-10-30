@@ -1,240 +1,783 @@
 {
-  "appName": { "message": "BrowserAgent" },
-  "appDesc": { "message": "Agente de navegação com IA usando qualquer LLM" },
-  "header_title": { "message": "BrowserAgent" },
-  "header_settings": { "message": "Configurações" },
-  "header_history": { "message": "Histórico de conversas" },
-  "header_clear": { "message": "Limpar conversa" },
-  "header_model_soon": { "message": "Selecionar modelo (em breve)" },
-
-  "chat_placeholder": { "message": "Descreve o que queres que o agente faça..." },
-  "chat_model_search_placeholder": { "message": "Buscar modelos..." },
-  "chat_send": { "message": "Enviar" },
-  "chat_abort": { "message": "Parar" },
-  "chat_empty_title": { "message": "Como posso ajudar hoje?" },
-  "chat_empty_desc": { "message": "Posso navegar na web, preencher formulários, tirar screenshots e automatizar tarefas no teu navegador." },
-  "thinking": { "message": "A pensar..." },
-  "error_no_response": { "message": "Sem resposta" },
-  "error_tool_failed": { "message": "Falha na execução" },
-
-  "input_placeholder_empty": { "message": "Digite / para comandos" },
-  "input_placeholder_reply": { "message": "Responder ao BrowserAgent" },
-  "input_send": { "message": "Enviar mensagem" },
-  "input_stop": { "message": "Parar" },
-  "input_actions": { "message": "Ações" },
-  "action_screenshot": { "message": "Tirar screenshot" },
-  "action_upload": { "message": "Carregar do computador" },
-
-  "perm_ask_before": { "message": "Perguntar antes de agir" },
-  "perm_act_without": { "message": "Agir sem perguntar" },
-  "perm_plans_desc": { "message": "O agente planeia a sua abordagem antes de agir." },
-  "perm_auto_desc": { "message": "O agente age automaticamente sem perguntar primeiro." },
-
-  "high_risk_title": { "message": "ALTO RISCO" },
-  "high_risk_text": { "message": "O agente pode realizar a maioria das ações na internet agora. Esta configuração pode colocar os teus dados em risco." },
-  "high_risk_dismiss": { "message": "Dispensar" },
-  "disclaimer": { "message": "O agente é IA e pode cometer erros. Por favor, verifica as respostas." },
-
-  "user_label": { "message": "Você" },
-  "agent_label": { "message": "Agente" },
-  "reasoning_label": { "message": "Mostrar raciocínio" },
-  "reasoning_hide": { "message": "Esconder raciocínio" },
-
-  "tool_pending": { "message": "A executar $TOOL$...", "placeholders": { "TOOL": { "content": "$1" } } },
-  "tool_done": { "message": "$TOOL$ concluído", "placeholders": { "TOOL": { "content": "$1" } } },
-
-  "perm_title": { "message": "Permissão necessária" },
-  "perm_body": { "message": "O agente quer $ACTION$ em $SITE$.", "placeholders": { "ACTION": { "content": "$1" }, "SITE": { "content": "$2" } } },
-  "perm_allow": { "message": "Permitir" },
-  "perm_once": { "message": "Permitir esta vez" },
-  "perm_deny": { "message": "Negar" },
-  "perm_approved": { "message": "✓ Permitido" },
-  "perm_denied": { "message": "✗ Negado" },
-
-  "options_title": { "message": "⚙️ BrowserAgent Config" },
-  "options_subtitle": { "message": "Configura os teus providers de API e modelos." },
-  "options_base_url": { "message": "URL Base" },
-  "options_api_key": { "message": "Chave API" },
-  "options_model": { "message": "Modelo" },
-  "options_test": { "message": "Testar conexão" },
-  "options_testing": { "message": "A testar..." },
-  "options_save": { "message": "Salvar configurações" },
-  "options_reset": { "message": "Reset" },
-  "options_saved": { "message": "✓ Salvo!" },
-  "options_fill_first": { "message": "Preenche baseUrl e apiKey primeiro." },
-  "options_clear_confirm": { "message": "Limpar todas as configurações?" },
-
-  "error_tool_timeout": { "message": "Tempo limite de execução excedido" },
-  "error_permission_denied": { "message": "Permissão negada" },
-  "status_connected": { "message": "Ligado" },
-  "status_disconnected": { "message": "Desligado" },
-
-  "search_provider_section": { "message": "Motor de Busca" },
-  "search_provider_url": { "message": "URL do Motor de Busca" },
-  "search_provider_parser": { "message": "Tipo de parser" },
-  "search_provider_api_key": { "message": "Chave de API (opcional)" },
-  "search_test": { "message": "Testar pesquisa" },
-  "search_testing": { "message": "Testando..." },
-  "search_test_success": { "message": "✓ Conexão bem-sucedida" },
+  "appName": {
+    "message": "BrowserAgent"
+  },
+  "appDesc": {
+    "message": "Agente de navegação com IA usando qualquer LLM"
+  },
+  "header_title": {
+    "message": "BrowserAgent"
+  },
+  "header_settings": {
+    "message": "Configurações"
+  },
+  "header_history": {
+    "message": "Histórico de conversas"
+  },
+  "header_clear": {
+    "message": "Limpar conversa"
+  },
+  "header_model_soon": {
+    "message": "Selecionar modelo (em breve)"
+  },
+  "chat_placeholder": {
+    "message": "Descreve o que queres que o agente faça..."
+  },
+  "chat_model_search_placeholder": {
+    "message": "Buscar modelos..."
+  },
+  "chat_send": {
+    "message": "Enviar"
+  },
+  "chat_abort": {
+    "message": "Parar"
+  },
+  "chat_empty_title": {
+    "message": "Como posso ajudar hoje?"
+  },
+  "chat_empty_desc": {
+    "message": "Posso navegar na web, preencher formulários, tirar screenshots e automatizar tarefas no teu navegador."
+  },
+  "thinking": {
+    "message": "A pensar..."
+  },
+  "error_no_response": {
+    "message": "Sem resposta"
+  },
+  "error_tool_failed": {
+    "message": "Falha na execução"
+  },
+  "input_placeholder_empty": {
+    "message": "Digite / para comandos"
+  },
+  "input_placeholder_reply": {
+    "message": "Responder ao BrowserAgent"
+  },
+  "input_send": {
+    "message": "Enviar mensagem"
+  },
+  "input_stop": {
+    "message": "Parar"
+  },
+  "input_actions": {
+    "message": "Ações"
+  },
+  "action_screenshot": {
+    "message": "Tirar screenshot"
+  },
+  "action_upload": {
+    "message": "Carregar do computador"
+  },
+  "perm_ask_before": {
+    "message": "Perguntar antes de agir"
+  },
+  "perm_act_without": {
+    "message": "Agir sem perguntar"
+  },
+  "perm_plans_desc": {
+    "message": "O agente planeia a sua abordagem antes de agir."
+  },
+  "perm_auto_desc": {
+    "message": "O agente age automaticamente sem perguntar primeiro."
+  },
+  "high_risk_title": {
+    "message": "ALTO RISCO"
+  },
+  "high_risk_text": {
+    "message": "O agente pode realizar a maioria das ações na internet agora. Esta configuração pode colocar os teus dados em risco."
+  },
+  "high_risk_dismiss": {
+    "message": "Dispensar"
+  },
+  "disclaimer": {
+    "message": "O agente é IA e pode cometer erros. Por favor, verifica as respostas."
+  },
+  "user_label": {
+    "message": "Você"
+  },
+  "agent_label": {
+    "message": "Agente"
+  },
+  "reasoning_label": {
+    "message": "Mostrar raciocínio"
+  },
+  "reasoning_hide": {
+    "message": "Esconder raciocínio"
+  },
+  "tool_pending": {
+    "message": "A executar $TOOL$...",
+    "placeholders": {
+      "TOOL": {
+        "content": "$1"
+      }
+    }
+  },
+  "tool_done": {
+    "message": "$TOOL$ concluído",
+    "placeholders": {
+      "TOOL": {
+        "content": "$1"
+      }
+    }
+  },
+  "perm_title": {
+    "message": "Permissão necessária"
+  },
+  "perm_body": {
+    "message": "O agente quer $ACTION$ em $SITE$.",
+    "placeholders": {
+      "ACTION": {
+        "content": "$1"
+      },
+      "SITE": {
+        "content": "$2"
+      }
+    }
+  },
+  "perm_allow": {
+    "message": "Permitir"
+  },
+  "perm_once": {
+    "message": "Permitir esta vez"
+  },
+  "perm_deny": {
+    "message": "Negar"
+  },
+  "perm_approved": {
+    "message": "✓ Permitido"
+  },
+  "perm_denied": {
+    "message": "✗ Negado"
+  },
+  "options_title": {
+    "message": "⚙️ BrowserAgent Config"
+  },
+  "options_subtitle": {
+    "message": "Configura os teus providers de API e modelos."
+  },
+  "options_base_url": {
+    "message": "URL Base"
+  },
+  "options_api_key": {
+    "message": "Chave API"
+  },
+  "options_model": {
+    "message": "Modelo"
+  },
+  "options_test": {
+    "message": "Testar conexão"
+  },
+  "options_testing": {
+    "message": "A testar..."
+  },
+  "options_save": {
+    "message": "Salvar configurações"
+  },
+  "options_reset": {
+    "message": "Reset"
+  },
+  "options_saved": {
+    "message": "✓ Salvo!"
+  },
+  "options_fill_first": {
+    "message": "Preenche baseUrl e apiKey primeiro."
+  },
+  "options_clear_confirm": {
+    "message": "Limpar todas as configurações?"
+  },
+  "error_tool_timeout": {
+    "message": "Tempo limite de execução excedido"
+  },
+  "error_permission_denied": {
+    "message": "Permissão negada"
+  },
+  "status_connected": {
+    "message": "Ligado"
+  },
+  "status_disconnected": {
+    "message": "Desligado"
+  },
+  "search_provider_section": {
+    "message": "Motor de Busca"
+  },
+  "search_provider_url": {
+    "message": "URL do Motor de Busca"
+  },
+  "search_provider_parser": {
+    "message": "Tipo de parser"
+  },
+  "search_provider_api_key": {
+    "message": "Chave de API (opcional)"
+  },
+  "search_test": {
+    "message": "Testar pesquisa"
+  },
+  "search_testing": {
+    "message": "Testando..."
+  },
+  "search_test_success": {
+    "message": "✓ Conexão bem-sucedida"
+  },
   "search_test_fail": {
     "message": "Falha na conexão: $ERROR$",
-    "placeholders": { "ERROR": { "content": "$1" } }
+    "placeholders": {
+      "ERROR": {
+        "content": "$1"
+      }
+    }
   },
-
-  "tool_web_search": { "message": "Pesquisar na web" },
-  "tool_web_fetch": { "message": "Buscar URL" },
-  "search_no_config": { "message": "Pesquisa web não configurada. Adicione um provedor de busca nas configurações." },
-  "search_no_results": { "message": "Nenhum resultado encontrado para \"$QUERY$\"", "placeholders": { "query": { "content": "$1" } } },
-  "fetch_blocked_scheme": { "message": "Esquema de URL bloqueado" },
-  "fetch_too_large": { "message": "Conteúdo truncado (resposta muito grande)" },
-
-  "perm_site_title": { "message": "Permissão necessária" },
-  "perm_site_body": { "message": "O agente quer $ACTION$ em $SITE$", "placeholders": { "action": { "content": "$1" }, "site": { "content": "$2" } } },
-  "perm_allow_all_chats": { "message": "Permitir em todos os chats" },
-  "perm_site_allowed": { "message": "✓ Permitido" },
-  "perm_site_denied": { "message": "✗ Negado" },
-  "perm_blocked_site": { "message": "Site bloqueado: $DOMAIN$", "placeholders": { "domain": { "content": "$1" } } },
-  "options_site_permissions": { "message": "Permissões de Sites" },
-  "options_allowlist": { "message": "Sites permitidos" },
-  "options_denylist": { "message": "Sites bloqueados" },
-  "options_add_domain": { "message": "Adicionar domínio" },
-  "options_clear_permissions": { "message": "Limpar todas as permissões" },
-
-  "cmd_clear": { "message": "Limpar conversa" },
-  "cmd_screenshot": { "message": "Tirar screenshot" },
-  "cmd_help": { "message": "Mostrar comandos disponíveis" },
-  "cmd_settings": { "message": "Abrir configurações" },
-  "cmd_tabs": { "message": "Mostrar contexto de abas" },
-  "cmd_status": { "message": "Mostrar estado atual" },
-  "task_create": { "message": "Criar tarefa agendada" },
-  "task_name": { "message": "Nome da tarefa" },
-  "task_command": { "message": "Comando" },
-  "task_schedule": { "message": "Agendamento" },
-  "task_run_now": { "message": "Executar agora" },
-  "task_delete": { "message": "Apagar" },
-  "task_daily": { "message": "Diário" },
-  "task_weekly": { "message": "Semanal" },
-  "task_monthly": { "message": "Mensal" },
-  "task_next_run": { "message": "Próxima execução" },
-
-  "tool_download": { "message": "Baixar arquivo" },
-  "tool_read_file": { "message": "Ler arquivo" },
-  "tool_create_file": { "message": "Criar arquivo" },
-  "tool_edit_file": { "message": "Editar arquivo" },
-  "download_started": { "message": "Download iniciado: $name$ (ID: $id$)",
-    "placeholders": { "name": { "content": "$1" }, "id": { "content": "$2" } } },
-  "download_failed": { "message": "Falha ao baixar: $reason$",
-    "placeholders": { "reason": { "content": "$1" } } },
-  "file_read_ok": { "message": "Lido \"$name$\" ($size$ bytes)",
-    "placeholders": { "name": { "content": "$1" }, "size": { "content": "$2" } } },
-  "file_create_ok": { "message": "Criado \"$name$\" ($size$ bytes)",
-    "placeholders": { "name": { "content": "$1" }, "size": { "content": "$2" } } },
-  "file_edit_ok": { "message": "Editado \"$name$\" ($size$ bytes)",
-    "placeholders": { "name": { "content": "$1" }, "size": { "content": "$2" } } },
-  "file_cancelled": { "message": "Operação cancelada pelo utilizador" },
-  "file_failed": { "message": "Falha na operação: $reason$",
-    "placeholders": { "reason": { "content": "$1" } } },
-  "file_not_found": { "message": "String não encontrada no arquivo: $text$",
-    "placeholders": { "text": { "content": "$1" } } },
-  "models_new_badge": { "message": "Novo" },
-  "models_reload": { "message": "Recarregar modelos" },
-  "models_reloaded": { "message": "Modelos recarregados ($COUNT$ providers)",
-    "placeholders": { "COUNT": { "content": "$1" } } },
-  "models_sync_pending": { "message": "Sincronização de modelos pendente — execute sync-models --watch" },
-
-  "options_providers_title": { "message": "Provedores" },
-  "options_providers_add": { "message": "Adicionar provedor" },
-  "options_providers_edit": { "message": "Editar provedor" },
-  "options_providers_delete": { "message": "Excluir provedor" },
-  "options_providers_delete_confirm": { "message": "Excluir este provedor?" },
-  "options_providers_test": { "message": "Testar conexão" },
-  "options_providers_inspect_raw": { "message": "Inspecionar bruto" },
-  "options_providers_inspect_raw_title": { "message": "Inspecionar resposta bruta da lista de modelos" },
-  "options_providers_inspect_raw_search": { "message": "Filtrar JSON..." },
-  "options_providers_inspect_raw_close": { "message": "Fechar" },
-  "options_providers_inspect_raw_copy": { "message": "Copiar JSON" },
-  "options_providers_active": { "message": "Ativo" },
-  "options_provider_label": { "message": "Nome" },
-  "options_provider_type": { "message": "Tipo de provedor" },
-  "options_provider_baseUrl": { "message": "URL base" },
-  "options_provider_authType": { "message": "Autenticação" },
-  "options_provider_apiKey": { "message": "Chave de API" },
-  "options_provider_customHeader": { "message": "Nome do header customizado" },
-  "options_provider_modelsSource": { "message": "Fonte dos modelos" },
-  "options_provider_manualModels": { "message": "Modelos manuais" },
-  "options_provider_enabled": { "message": "Ativo" },
-  "options_provider_save": { "message": "Salvar" },
-  "options_provider_cancel": { "message": "Cancelar" },
-  "options_provider_test_success": { "message": "Conexão bem-sucedida ($LATENCY$ms)", "placeholders": { "LATENCY": { "content": "$1" } } },
-  "options_provider_test_error": { "message": "Falha na conexão: $ERROR$", "placeholders": { "ERROR": { "content": "$1" } } },
-  "options_default_model": { "message": "Modelo padrão" },
-  "options_no_providers": { "message": "Nenhum provedor configurado" },
-
-  "options_custom_models_title": { "message": "Modelos Personalizados" },
-  "options_custom_models_desc": { "message": "Adicione manualmente IDs de modelo para qualquer provedor configurado. Eles aparecem no seletor de modelos junto com os modelos descobertos e podem substituir entradas existentes." },
-  "options_custom_models_provider": { "message": "Provedor" },
-  "options_custom_models_model_id": { "message": "ID do modelo" },
-  "options_custom_models_name": { "message": "Nome de exibição (opcional)" },
-  "options_custom_models_add": { "message": "Adicionar modelo personalizado" },
-  "options_custom_models_delete": { "message": "Excluir" },
-  "options_custom_models_vision": { "message": "Visão" },
-  "options_custom_models_tools": { "message": "Ferramentas" },
-  "options_custom_models_streaming": { "message": "Streaming" },
-  "options_custom_models_empty": { "message": "Nenhum modelo personalizado adicionado ainda." },
-
-  "route_where": { "message": "Para onde devo ir?" },
-  "route_ask": { "message": "Peça uma rota" },
-  "route_set_steps": { "message": "Fluxo definido. $N$ ações.", "placeholders": { "N": { "content": "$1" } } },
-  "route_n_steps": { "message": "Fluxo $N$ ações", "placeholders": { "N": { "content": "$1" } } },
-  "route_new": { "message": "Nova rota" },
-  "route_start_new": { "message": "Começar uma nova rota" },
-  "route_start_tab": { "message": "Comece por uma aba. Eu mapeio a rota." },
-  "route_or_type": { "message": "Ou digite outra instrução" },
-  "route_show_engine": { "message": "Mostrar motor e checkpoints" },
-  "route_continue": { "message": "Continuar fluxo" },
-  "route_stopped": { "message": "Fluxo interrompido." },
-  "checkpoint_label": { "message": "Checkpoint" },
-  "checkpoint_toggle": { "message": "Checkpoints ativados-desativados" },
-  "checkpoint_turn_on": { "message": "Ativar checkpoints" },
-  "perm_allow_once": { "message": "Permitir uma vez" },
-  "perm_not_now": { "message": "Agora não" },
-  "perm_always": { "message": "Sempre permitir" },
-  "perm_ask_actions": { "message": "Perguntar antes de agir" },
-  "perm_act_no_ask": { "message": "Agir sem perguntar" },
-  "tab_active": { "message": "BrowserAgent está nesta aba." },
-  "tab_chip": { "message": "Esta aba" },
-  "disclaimer_route": { "message": "BrowserAgent pode cometer erros. Confira a rota." },
-  "tasks_title": { "message": "Tarefas agendadas" },
-  "tasks_empty": { "message": "Nenhuma tarefa agendada" },
-  "task_cancel": { "message": "Cancelar" },
-  "task_create_btn": { "message": "Criar" },
-  "task_once": { "message": "Uma vez" },
-  "task_day": { "message": "Dia" },
-  "models_search": { "message": "Buscar modelos" },
-  "models_select": { "message": "Selecionar modelo" },
-  "models_no_match": { "message": "Nenhum modelo corresponde." },
-  "models_no_providers": { "message": "Nenhum provider de IA configurado." },
-  "header_options": { "message": "Opções" },
-  "providers_manage": { "message": "Gerenciar providers" },
-  "options_save_changes": { "message": "Salvar alterações" },
-  "options_discard": { "message": "Descartar" },
-  "step_done": { "message": "Concluído" },
-  "route_title": { "message": "Fluxo" },
-  "route_steps_one": { "message": "Fluxo · 1 ação" },
-  "route_steps_other": { "message": "Fluxo · $COUNT$ ações", "placeholders": { "COUNT": { "content": "$1" } } },
-  "route_paused": { "message": "Fluxo pausado no passo $STEP$.", "placeholders": { "STEP": { "content": "$1" } } },
-  "step_now": { "message": "Agora" },
-  "step_next": { "message": "Próximo" },
-  "route_empty": { "message": "Fluxo vazio" },
-  "step_auto": { "message": "Auto" },
-  "empty_lede": { "message": "Comece pela aba que está aberta. Eu mapeio os passos, mostro cada chamada de ferramenta e paro em um checkpoint antes de qualquer mudança." },
-  "empty_preview": { "message": "Prévia da rota 3 passos" },
-  "empty_step_plan": { "message": "Planejar a rota" },
-  "empty_step_show": { "message": "Mostrar cada passo" },
-  "empty_suggest_prices": { "message": "Comparar preços nesta aba" },
-  "empty_suggest_form": { "message": "Preencher este formulário para mim" },
-  "banner_error": { "message": "Algo deu errado." },
-  "banner_retry": { "message": "Tentar novamente" },
-  "banner_no_provider": { "message": "Nenhum provider configurado. Gerencie os providers para começar uma rota." },
-  "attach_remove": { "message": "Remover" }
+  "tool_web_search": {
+    "message": "Pesquisar na web"
+  },
+  "tool_web_fetch": {
+    "message": "Buscar URL"
+  },
+  "search_no_config": {
+    "message": "Pesquisa web não configurada. Adicione um provedor de busca nas configurações."
+  },
+  "search_no_results": {
+    "message": "Nenhum resultado encontrado para \"$QUERY$\"",
+    "placeholders": {
+      "query": {
+        "content": "$1"
+      }
+    }
+  },
+  "fetch_blocked_scheme": {
+    "message": "Esquema de URL bloqueado"
+  },
+  "fetch_too_large": {
+    "message": "Conteúdo truncado (resposta muito grande)"
+  },
+  "perm_site_title": {
+    "message": "Permissão necessária"
+  },
+  "perm_site_body": {
+    "message": "O agente quer $ACTION$ em $SITE$",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      },
+      "site": {
+        "content": "$2"
+      }
+    }
+  },
+  "perm_allow_all_chats": {
+    "message": "Permitir em todos os chats"
+  },
+  "perm_site_allowed": {
+    "message": "✓ Permitido"
+  },
+  "perm_site_denied": {
+    "message": "✗ Negado"
+  },
+  "perm_blocked_site": {
+    "message": "Site bloqueado: $DOMAIN$",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_site_permissions": {
+    "message": "Permissões de Sites"
+  },
+  "options_allowlist": {
+    "message": "Sites permitidos"
+  },
+  "options_denylist": {
+    "message": "Sites bloqueados"
+  },
+  "options_add_domain": {
+    "message": "Adicionar domínio"
+  },
+  "options_clear_permissions": {
+    "message": "Limpar todas as permissões"
+  },
+  "cmd_clear": {
+    "message": "Limpar conversa"
+  },
+  "cmd_screenshot": {
+    "message": "Tirar screenshot"
+  },
+  "cmd_help": {
+    "message": "Mostrar comandos disponíveis"
+  },
+  "cmd_settings": {
+    "message": "Abrir configurações"
+  },
+  "cmd_tabs": {
+    "message": "Mostrar contexto de abas"
+  },
+  "cmd_status": {
+    "message": "Mostrar estado atual"
+  },
+  "task_create": {
+    "message": "Criar tarefa agendada"
+  },
+  "task_name": {
+    "message": "Nome da tarefa"
+  },
+  "task_command": {
+    "message": "Comando"
+  },
+  "task_schedule": {
+    "message": "Agendamento"
+  },
+  "task_run_now": {
+    "message": "Executar agora"
+  },
+  "task_delete": {
+    "message": "Apagar"
+  },
+  "task_daily": {
+    "message": "Diário"
+  },
+  "task_weekly": {
+    "message": "Semanal"
+  },
+  "task_monthly": {
+    "message": "Mensal"
+  },
+  "task_next_run": {
+    "message": "Próxima execução"
+  },
+  "tool_download": {
+    "message": "Baixar arquivo"
+  },
+  "tool_read_file": {
+    "message": "Ler arquivo"
+  },
+  "tool_create_file": {
+    "message": "Criar arquivo"
+  },
+  "tool_edit_file": {
+    "message": "Editar arquivo"
+  },
+  "download_started": {
+    "message": "Download iniciado: $name$ (ID: $id$)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "id": {
+        "content": "$2"
+      }
+    }
+  },
+  "download_failed": {
+    "message": "Falha ao baixar: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
+  },
+  "file_read_ok": {
+    "message": "Lido \"$name$\" ($size$ bytes)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "size": {
+        "content": "$2"
+      }
+    }
+  },
+  "file_create_ok": {
+    "message": "Criado \"$name$\" ($size$ bytes)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "size": {
+        "content": "$2"
+      }
+    }
+  },
+  "file_edit_ok": {
+    "message": "Editado \"$name$\" ($size$ bytes)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "size": {
+        "content": "$2"
+      }
+    }
+  },
+  "file_cancelled": {
+    "message": "Operação cancelada pelo utilizador"
+  },
+  "file_failed": {
+    "message": "Falha na operação: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
+  },
+  "file_not_found": {
+    "message": "String não encontrada no arquivo: $text$",
+    "placeholders": {
+      "text": {
+        "content": "$1"
+      }
+    }
+  },
+  "models_new_badge": {
+    "message": "Novo"
+  },
+  "models_reload": {
+    "message": "Recarregar modelos"
+  },
+  "models_reloaded": {
+    "message": "Modelos recarregados ($COUNT$ providers)",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "models_sync_pending": {
+    "message": "Sincronização de modelos pendente — execute sync-models --watch"
+  },
+  "options_providers_title": {
+    "message": "Provedores"
+  },
+  "options_providers_add": {
+    "message": "Adicionar provedor"
+  },
+  "options_providers_edit": {
+    "message": "Editar provedor"
+  },
+  "options_providers_delete": {
+    "message": "Excluir provedor"
+  },
+  "options_providers_delete_confirm": {
+    "message": "Excluir este provedor?"
+  },
+  "options_providers_test": {
+    "message": "Testar conexão"
+  },
+  "options_providers_inspect_raw": {
+    "message": "Inspecionar bruto"
+  },
+  "options_providers_inspect_raw_title": {
+    "message": "Inspecionar resposta bruta da lista de modelos"
+  },
+  "options_providers_inspect_raw_search": {
+    "message": "Filtrar JSON..."
+  },
+  "options_providers_inspect_raw_close": {
+    "message": "Fechar"
+  },
+  "options_providers_inspect_raw_copy": {
+    "message": "Copiar JSON"
+  },
+  "options_providers_active": {
+    "message": "Ativo"
+  },
+  "options_provider_label": {
+    "message": "Nome"
+  },
+  "options_provider_type": {
+    "message": "Tipo de provedor"
+  },
+  "options_provider_baseUrl": {
+    "message": "URL base"
+  },
+  "options_provider_authType": {
+    "message": "Autenticação"
+  },
+  "options_provider_apiKey": {
+    "message": "Chave de API"
+  },
+  "options_provider_customHeader": {
+    "message": "Nome do header customizado"
+  },
+  "options_provider_modelsSource": {
+    "message": "Fonte dos modelos"
+  },
+  "options_provider_manualModels": {
+    "message": "Modelos manuais"
+  },
+  "options_provider_enabled": {
+    "message": "Ativo"
+  },
+  "options_provider_save": {
+    "message": "Salvar"
+  },
+  "options_provider_cancel": {
+    "message": "Cancelar"
+  },
+  "options_provider_test_success": {
+    "message": "Conexão bem-sucedida ($LATENCY$ms)",
+    "placeholders": {
+      "LATENCY": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_provider_test_error": {
+    "message": "Falha na conexão: $ERROR$",
+    "placeholders": {
+      "ERROR": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_default_model": {
+    "message": "Modelo padrão"
+  },
+  "options_no_providers": {
+    "message": "Nenhum provedor configurado"
+  },
+  "options_custom_models_title": {
+    "message": "Modelos Personalizados"
+  },
+  "options_custom_models_desc": {
+    "message": "Adicione manualmente IDs de modelo para qualquer provedor configurado. Eles aparecem no seletor de modelos junto com os modelos descobertos e podem substituir entradas existentes."
+  },
+  "options_custom_models_provider": {
+    "message": "Provedor"
+  },
+  "options_custom_models_model_id": {
+    "message": "ID do modelo"
+  },
+  "options_custom_models_name": {
+    "message": "Nome de exibição (opcional)"
+  },
+  "options_custom_models_add": {
+    "message": "Adicionar modelo personalizado"
+  },
+  "options_custom_models_delete": {
+    "message": "Excluir"
+  },
+  "options_custom_models_vision": {
+    "message": "Visão"
+  },
+  "options_custom_models_tools": {
+    "message": "Ferramentas"
+  },
+  "options_custom_models_streaming": {
+    "message": "Streaming"
+  },
+  "options_custom_models_empty": {
+    "message": "Nenhum modelo personalizado adicionado ainda."
+  },
+  "route_where": {
+    "message": "Para onde devo ir?"
+  },
+  "route_ask": {
+    "message": "Peça uma rota"
+  },
+  "route_set_steps": {
+    "message": "Fluxo definido. $N$ ações.",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "route_n_steps": {
+    "message": "Fluxo $N$ ações",
+    "placeholders": {
+      "N": {
+        "content": "$1"
+      }
+    }
+  },
+  "route_new": {
+    "message": "Nova rota"
+  },
+  "route_start_new": {
+    "message": "Começar uma nova rota"
+  },
+  "route_start_tab": {
+    "message": "Comece por uma aba. Eu mapeio a rota."
+  },
+  "route_or_type": {
+    "message": "Ou digite outra instrução"
+  },
+  "route_show_engine": {
+    "message": "Mostrar motor e checkpoints"
+  },
+  "route_continue": {
+    "message": "Continuar fluxo"
+  },
+  "route_stopped": {
+    "message": "Fluxo interrompido."
+  },
+  "checkpoint_label": {
+    "message": "Checkpoint"
+  },
+  "checkpoint_toggle": {
+    "message": "Checkpoints ativados-desativados"
+  },
+  "checkpoint_turn_on": {
+    "message": "Ativar checkpoints"
+  },
+  "perm_allow_once": {
+    "message": "Permitir uma vez"
+  },
+  "perm_not_now": {
+    "message": "Agora não"
+  },
+  "perm_always": {
+    "message": "Sempre permitir"
+  },
+  "perm_ask_actions": {
+    "message": "Perguntar antes de agir"
+  },
+  "perm_act_no_ask": {
+    "message": "Agir sem perguntar"
+  },
+  "tab_active": {
+    "message": "BrowserAgent está nesta aba."
+  },
+  "tab_chip": {
+    "message": "Esta aba"
+  },
+  "disclaimer_route": {
+    "message": "BrowserAgent pode cometer erros. Confira a rota."
+  },
+  "tasks_title": {
+    "message": "Tarefas agendadas"
+  },
+  "tasks_empty": {
+    "message": "Nenhuma tarefa agendada"
+  },
+  "task_cancel": {
+    "message": "Cancelar"
+  },
+  "task_create_btn": {
+    "message": "Criar"
+  },
+  "task_once": {
+    "message": "Uma vez"
+  },
+  "task_day": {
+    "message": "Dia"
+  },
+  "models_search": {
+    "message": "Buscar modelos"
+  },
+  "models_select": {
+    "message": "Selecionar modelo"
+  },
+  "models_no_match": {
+    "message": "Nenhum modelo corresponde."
+  },
+  "models_no_providers": {
+    "message": "Nenhum provider de IA configurado."
+  },
+  "header_options": {
+    "message": "Opções"
+  },
+  "providers_manage": {
+    "message": "Gerenciar providers"
+  },
+  "options_save_changes": {
+    "message": "Salvar alterações"
+  },
+  "options_discard": {
+    "message": "Descartar"
+  },
+  "step_done": {
+    "message": "Concluído"
+  },
+  "route_title": {
+    "message": "Fluxo"
+  },
+  "route_steps_one": {
+    "message": "Fluxo · 1 ação"
+  },
+  "route_steps_other": {
+    "message": "Fluxo · $COUNT$ ações",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "route_paused": {
+    "message": "Fluxo pausado no passo $STEP$.",
+    "placeholders": {
+      "STEP": {
+        "content": "$1"
+      }
+    }
+  },
+  "step_now": {
+    "message": "Agora"
+  },
+  "step_next": {
+    "message": "Próximo"
+  },
+  "route_empty": {
+    "message": "Fluxo vazio"
+  },
+  "step_auto": {
+    "message": "Auto"
+  },
+  "empty_lede": {
+    "message": "Comece pela aba que está aberta. Eu mapeio os passos, mostro cada chamada de ferramenta e paro em um checkpoint antes de qualquer mudança."
+  },
+  "empty_preview": {
+    "message": "Prévia da rota 3 passos"
+  },
+  "empty_step_plan": {
+    "message": "Planejar a rota"
+  },
+  "empty_step_show": {
+    "message": "Mostrar cada passo"
+  },
+  "empty_suggest_prices": {
+    "message": "Comparar preços nesta aba"
+  },
+  "empty_suggest_form": {
+    "message": "Preencher este formulário para mim"
+  },
+  "banner_error": {
+    "message": "Algo deu errado."
+  },
+  "banner_retry": {
+    "message": "Tentar novamente"
+  },
+  "banner_no_provider": {
+    "message": "Nenhum provider configurado. Gerencie os providers para começar uma rota."
+  },
+  "attach_remove": {
+    "message": "Remover"
+  },
+  "bridge_connected": {
+    "message": "Conectado ao browser",
+    "description": "MCP bridge connected"
+  },
+  "bridge_pair_title": {
+    "message": "Código do daemon:",
+    "description": "Prompt for pairing code"
+  },
+  "bridge_code_placeholder": {
+    "message": "6 dígitos",
+    "description": "Pairing code placeholder"
+  },
+  "bridge_code_invalid": {
+    "message": "Digite os 6 dígitos",
+    "description": "Invalid code error"
+  },
+  "bridge_pair_button": {
+    "message": "Parear",
+    "description": "Pair button"
+  },
+  "bridge_pair_failed": {
+    "message": "Pareamento falhou",
+    "description": "Pair failed"
+  },
+  "bridge_off": {
+    "message": "Desligado — liga sozinho com o agente",
+    "description": "Daemon off"
+  }
 }
