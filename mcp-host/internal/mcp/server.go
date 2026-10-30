@@ -26,6 +26,9 @@ type ToolDef struct {
 }
 
 func schema(props map[string]any, required ...string) map[string]any {
+	if required == nil {
+		required = []string{} // Opencode rejeita "required": null; array vazio é válido
+	}
 	return map[string]any{
 		"type": "object", "properties": props, "required": required,
 		"additionalProperties": false,
