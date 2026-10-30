@@ -401,8 +401,9 @@ func ServeWS(h *Hub, expectedToken string, w http.ResponseWriter, r *http.Reques
 	// Trust-on-first-use (SPEC §3): loopback SEM token passa uma única vez,
 	// antes de qualquer pareamento. O 1º handshake válido grava `paired`
 	// (via OnAuth) e trava a janela; depois disso, token sempre exigido.
+	tofu := false
 	if token == "" && !auth.IsPaired() {
-		// segue para o upgrade sem token
+		tofu = true // segue para o upgrade sem token
 	} else if !auth.Accepts(token, expectedToken) {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
@@ -438,6 +439,11 @@ func ServeWS(h *Hub, expectedToken string, w http.ResponseWriter, r *http.Reques
 	h.SetExtension(rc)
 	if h.OnAuth != nil {
 		h.OnAuth()
+	}
+	if tofu {
+		// Entrega o token no 1º frame: a extensão guarda e usa daqui em
+		// diante, então reconnects sobrevivem a restart do SW (SPEC §3).
+		_ = rc.SendText(`{"type":"welcome","token":"` + expectedToken + `"}`)
 	}
 	defer h.ClearExtension()
 	defer conn.Close()

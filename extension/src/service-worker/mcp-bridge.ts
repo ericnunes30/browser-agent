@@ -368,6 +368,15 @@ async function handleDaemonFrame(raw: string): Promise<void> {
     sendErrorNoId('JSON inválido do daemon');
     return;
   }
+  // Boas-vindas do pareamento TOFU: entrega o token uma vez; a extensão
+  // guarda e usa em todo reconnect. Não é erro de protocolo.
+  if (isRecord(msg) && msg.type === 'welcome') {
+    if (typeof msg.token === 'string' && isFullToken(msg.token)) {
+      await chrome.storage.local.set({ [TOKEN_KEY]: msg.token, [PORT_KEY]: currentPort });
+      lastError = null;
+    }
+    return;
+  }
   if (!isRecord(msg) || typeof msg.id !== 'string' || msg.id.length === 0 || msg.type !== 'tool_request') {
     sendErrorNoId('Frame sem id/type tool_request');
     return;
