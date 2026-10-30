@@ -669,7 +669,9 @@ async function executeComputerTool(
   try {
     switch (action) {
       case 'screenshot': {
-        const dataUrl = await captureScreenshot(tabId);
+        // Teto de 15 s: sem isso um capture travado (ex. janela minimizada)
+        // pendura a tool até o timeout do daemon (30 s) sem resposta útil.
+        const dataUrl = await withTimeout15s(captureScreenshot(tabId));
         notifyAction();
         const base64 = dataUrl.split(',')[1];
         if (typeof base64 === 'string' && base64.length > 0) {
@@ -1760,6 +1762,20 @@ async function injectAndEval(
     const msg = err instanceof Error ? err.message : String(err);
     return JSON.stringify({ error: msg });
   }
+}
+
+/**
+ * Corre captureScreenshot com teto: se o Chrome não resolver (ex. janela
+ * minimizada/oculta), devolve erro limpo em vez de pendurar a tool.
+ */
+function withTimeout15s<T>(p: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('screenshot indisponível (timeout 15 s) — ative a janela do Chrome e tente de novo')), 15000);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
 }
 
 /**
