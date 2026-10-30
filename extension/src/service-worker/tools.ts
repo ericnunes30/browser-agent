@@ -1578,34 +1578,51 @@ async function executeEditFile(
 
 /* ─── JavaScript execution tool ───────────────────────────── */
 async function executeJavaScriptTool(input: JavaScriptToolInput): Promise<ToolResult> {
+  const code = (input as { code?: unknown }).code ?? (input as { text?: unknown }).text;
+  if (typeof code !== 'string' || code.length === 0) {
+    return { type: 'tool_result', content: 'JavaScript error: missing `code` string.' };
+  }
+  // 1) CDP Runtime.evaluate: ignora o CSP da página (ex. Gemini bloqueia
+  // eval). Mostra o banner do debugger — já aceito no fluxo do agente.
   try {
-    const result = await chrome.scripting.executeScript({
-      target: { tabId: input.tabId },
-      func: (code: string) => {
-        try {
-          return { success: true, result: eval(code) };
-        } catch (err: any) {
-          return { success: false, error: err.message || String(err) };
-        }
-      },
-      args: [input.code],
-    });
-    const frameResult = result[0]?.result as any;
-    if (frameResult?.success) {
+    const value = await debuggerManager.evaluate(input.tabId, code);
+    return {
+      type: 'tool_result',
+      content: typeof value === 'string' ? value : JSON.stringify(value ?? 'undefined'),
+    };
+  } catch (cdpErr) {
+    // 2) Fallback: scripting.executeScript (páginas sem CDP, ex. chrome://).
+    try {
+      const result = await chrome.scripting.executeScript({
+        target: { tabId: input.tabId },
+        func: (c: string) => {
+          try {
+            // eslint-disable-next-line no-eval
+            return { success: true, result: eval(c) };
+          } catch (err: any) {
+            return { success: false, error: err.message || String(err) };
+          }
+        },
+        args: [code],
+      });
+      const frameResult = result[0]?.result as any;
+      if (frameResult?.success) {
+        return {
+          type: 'tool_result',
+          content: typeof frameResult.result === 'string' ? frameResult.result : JSON.stringify(frameResult.result),
+        };
+      }
       return {
         type: 'tool_result',
-        content: typeof frameResult.result === 'string' ? frameResult.result : JSON.stringify(frameResult.result),
+        content: `JavaScript error: ${frameResult?.error || 'unknown error'}`,
+      };
+    } catch (err: any) {
+      const cdpMsg = cdpErr instanceof Error ? cdpErr.message : String(cdpErr);
+      return {
+        type: 'tool_result',
+        content: `Failed to execute JavaScript: ${err.message || String(err)} (CDP: ${cdpMsg})`,
       };
     }
-    return {
-      type: 'tool_result',
-      content: `JavaScript error: ${frameResult?.error || 'unknown error'}`,
-    };
-  } catch (err: any) {
-    return {
-      type: 'tool_result',
-      content: `Failed to execute JavaScript: ${err.message || String(err)}`,
-    };
   }
 }
 
