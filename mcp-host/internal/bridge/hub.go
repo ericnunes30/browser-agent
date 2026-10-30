@@ -35,6 +35,7 @@ type WSConn interface {
 type incoming struct {
 	result  map[string]any
 	toolErr *ErrorPayload
+	tools   []any
 }
 
 // Hub registers the single extension connection, correlates responses by id,
@@ -198,11 +199,69 @@ func (h *Hub) HandleMessage(raw string) error {
 		}
 		h.route(id, incoming{toolErr: env.Error})
 		return nil
+	case FrameToolList: {
+		var tr struct {
+			Tools []any `json:"tools"`
+		}
+		if err := json.Unmarshal([]byte(raw), &tr); err != nil || tr.Tools == nil {
+			if h.RecordProtocolError() {
+				return ErrAbuse
+			}
+			return nil
+		}
+		h.route(id, incoming{tools: tr.Tools})
+		return nil
+	}
 	default:
 		if h.RecordProtocolError() {
 			return ErrAbuse
 		}
 		return nil
+	}
+}
+
+// ListTools asks the extension for its live inventory (dynamic §7).
+// The extension owns ALL_TOOLS; the daemon caches nothing here — the MCP
+// server layer caches. No queue: listing never touches a tab.
+func (h *Hub) ListTools(timeoutMs int) ([]any, error) {
+	if timeoutMs <= 0 {
+		timeoutMs = 10000
+	}
+	ext := h.extension()
+	if ext == nil {
+		return nil, fmt.Errorf("TAB_GONE: extension not connected")
+	}
+	id := NewRequestID()
+	ch := make(chan incoming, 1)
+	h.mu.Lock()
+	h.pending[id] = ch
+	h.mu.Unlock()
+	defer func() {
+		h.mu.Lock()
+		delete(h.pending, id)
+		h.mu.Unlock()
+	}()
+
+	raw, err := json.Marshal(map[string]any{"id": id, "type": FrameList})
+	if err != nil {
+		return nil, fmt.Errorf("encode list_tools: %w", err)
+	}
+	if err := ext.SendText(string(raw)); err != nil {
+		return nil, fmt.Errorf("TAB_GONE: extension socket write failed")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutMs)*time.Millisecond)
+	defer cancel()
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("TIMEOUT: list_tools exceeded %d ms", timeoutMs)
+	case msg := <-ch:
+		if msg.toolErr != nil {
+			return nil, fmt.Errorf("%s: %s", msg.toolErr.Code, msg.toolErr.Message)
+		}
+		if msg.tools == nil {
+			return nil, fmt.Errorf("PROTOCOL: list_tools answer without tools")
+		}
+		return msg.tools, nil
 	}
 }
 

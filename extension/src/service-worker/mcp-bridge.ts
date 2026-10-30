@@ -7,9 +7,10 @@
 /*  {tool_response|tool_error}. Permission gate, CDP helpers e batch     */
 /*  continuam em tools.ts — aqui só há framing, pareamento e reconnect. */
 /* ------------------------------------------------------------------ */
-import { executeTool } from './tools';
+import { executeTool, ALL_TOOLS } from './tools';
 import { startKeepAlive, stopKeepAlive } from './keep-alive';
 import type { ToolResult } from './providers/types';
+import type { ToolDefinition } from './providers/types';
 
 /* ──── Constantes (SPEC §3–§5) ─────────────────────────────────────── */
 
@@ -32,8 +33,6 @@ const WS_CLOSE_ABUSE = 4400;
 const REPLAY_CACHE_SIZE = 200;
 
 /* ──── Tipos do framing (SPEC §4) ──────────────────────────────────── */
-
-export type McpBridgeTool = 'snapshot' | 'screenshot' | 'navigate' | 'get_text' | 'tabs';
 
 export type BridgeErrorCode =
   | 'TIMEOUT'
@@ -67,7 +66,14 @@ export interface BridgeToolError {
   error: { code: BridgeErrorCode; message: string };
 }
 
-export type BridgeOutgoing = BridgeToolResponse | BridgeToolError;
+export interface BridgeToolList {
+  id: string;
+  type: 'tools_response';
+  ok: true;
+  tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>;
+}
+
+export type BridgeOutgoing = BridgeToolResponse | BridgeToolError | BridgeToolList;
 
 export interface BridgeState {
   status: BridgeConnStatus;
@@ -377,6 +383,12 @@ async function handleDaemonFrame(raw: string): Promise<void> {
     }
     return;
   }
+  // Inventário dinâmico: o daemon pede, a extensão (dona do ALL_TOOLS)
+  // responde. Zero mapeamento manual dos dois lados.
+  if (isRecord(msg) && msg.type === 'list_tools' && typeof msg.id === 'string' && msg.id.length > 0) {
+    sendOutgoing({ id: msg.id, type: 'tools_response', ok: true, tools: ALL_TOOLS.map(toMcpTool) });
+    return;
+  }
   if (!isRecord(msg) || typeof msg.id !== 'string' || msg.id.length === 0 || msg.type !== 'tool_request') {
     sendErrorNoId('Frame sem id/type tool_request');
     return;
@@ -500,29 +512,16 @@ interface ExecCall {
   input: Record<string, unknown>;
 }
 
-/**
- * Mapeia o subset piloto MCP → nomes/inputs de `executeTool` (SPEC §7).
- * Nome fora do piloto → PROTOCOL sem encaminhar.
- */
-function mapPilotTool(tool: string, args: Record<string, unknown>, tabId: number): ExecCall | null {
-  switch (tool as McpBridgeTool) {
-    case 'snapshot':
-      return { name: 'take_snapshot', input: { ...args, tabId } };
-    case 'screenshot':
-      // COMPUTER restrito a action="screenshot" nesta fase.
-      return { name: 'computer', input: { ...args, action: 'screenshot', tabId } };
-    case 'navigate':
-      return { name: 'navigate', input: { ...args, tabId } };
-    case 'get_text':
-      return { name: 'get_page_text', input: { ...args, tabId } };
-    case 'tabs':
-      if (typeof args.url === 'string' && args.url.length > 0) {
-        return { name: 'tabs_create', input: { url: args.url } };
-      }
-      return { name: 'tabs_context', input: {} };
-    default:
-      return null;
-  }
+/** Converte ToolDefinition interna para o shape MCP. Garante `required`
+ * como array (clientes estritos como o Opencode rejeitam null). */
+function toMcpTool(t: ToolDefinition): { name: string; description: string; inputSchema: Record<string, unknown> } {
+  const schema = (t.input_schema ?? {}) as Record<string, unknown>;
+  const required = Array.isArray(schema.required) ? schema.required : [];
+  return {
+    name: t.name,
+    description: typeof t.description === 'string' ? t.description : '',
+    inputSchema: { ...schema, required },
+  };
 }
 
 function classifyResult(result: ToolResult): BridgeErrorCode | null {
@@ -542,16 +541,16 @@ async function runToolRequest(req: BridgeToolRequest): Promise<ToolResult> {
     throw { code: 'TAB_GONE' as BridgeErrorCode, message: 'Sem aba ativa para executar a tool' };
   }
 
-  const call = mapPilotTool(req.tool, req.args, tabId);
-  if (!call) {
+  // Repasse direto: o daemon só envia nomes do inventário dinâmico
+  // (list_tools); desconhecido cai no default do executeTool.
+  // Permission gate, CDP e batch vivem em executeTool — não duplicar.
+  const call: ExecCall = { name: req.tool, input: { ...req.args, tabId } };
+  if (!call.name) {
     throw {
       code: 'PROTOCOL' as BridgeErrorCode,
-      message: `Tool desconhecida fora do piloto: ${req.tool || '(vazia)'}`,
+      message: 'Tool sem nome',
     };
   }
-
-  // `browser_batch` não está no piloto: nunca chega aqui (PROTOCOL acima).
-  // Permission gate, CDP e batch vivem em executeTool — não duplicar.
   try {
     return await executeTool(call.name, call.input, tabId);
   } catch (err: unknown) {

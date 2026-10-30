@@ -33,7 +33,7 @@ Nada fora de `mcp-host/` nesta fase. Lado extensão = só o cliente WS
 | Área | Comportamento |
 |---|---|
 | MCP stdio | `daemon --stdio`: ciclo de vida on-demand (padrão). O agente spawna o daemon ao abrir a conexão MCP; stdin EOF encerra a sessão e o daemon sai por completo (HTTP+WS junto). Nada fica residente. `daemon start` existe só para instância persistente explícita. |
-| MCP HTTP | `POST http://127.0.0.1:<porta>/mcp` Streamable HTTP (`"type":"streamableHttp"`). `tools/list` + `tools/call` a partir do subset piloto (seção 7), `input_schema` validado no daemon antes de enviar à extensão. |
+| MCP HTTP | `POST http://127.0.0.1:<porta>/mcp` Streamable HTTP (`"type":"streamableHttp"`). `tools/list` dinâmico (seção 7) + `tools/call` com validação de forma no daemon antes de enviar à extensão. |
 | Pareamento/token | Na 1ª boot gera 32 bytes `crypto/rand` hex em `%APPDATA%/BrowserAgent/token` (0600). **Zero clique (TOFU por slot vazio)**: loopback SEM token é aceito sempre que ninguém estiver conectado; o daemon entrega o token no 1º frame `welcome` e a extensão guarda para os reconnects. Com extensão conectada, sem token → `403`; com token válido, o dono retoma o slot. `paired` trava só o `POST /pair`. `daemon --reset-token` regenera tudo. |
 | Fila | `queue/queue.go`: FIFO por `tabId`, 1 request in-flight por tab; tabs diferentes em paralelo. `browser_batch` continua sequencial dentro da extensão (`tools.ts:1721-1734`, sem aninhar). |
 | Logs | JSONL `{ts,level,msg,tool,tabId,latencyMs}` em `%APPDATA%/BrowserAgent/logs/`. `GET /status` expõe `lastError` + `uptime`. Sem PII de página (só url domain). |
@@ -74,7 +74,7 @@ Response (extensão→daemon):
 Regras:
 
 - `id` (string uuid v4, gerado pelo daemon) correlaciona async; concorrência via `id` + fila por tab (fluxo 12). Respostas fora de ordem são normais.
-- `tool` ∈ subset piloto (seção 7). Nome desconhecido → `tool_error{PROTOCOL}` sem encaminhar.
+- `tool` ∈ inventário dinâmico da extensão (seção 7). Nome vazio → `tool_error{PROTOCOL}` sem encaminhar.
 - `args.tabId`: se ausente, a extensão resolve para a aba ativa (`chrome.tabs.query({active:true})`) antes de chamar `executeTool` — corrige o `_tabId ?? 0` que hoje quebra file tools (`tools.ts:1713-1719`, falta 13).
 - Imagens: `ToolResult.images[]`/`screenshots[]` viajam como base64 puro (sem `data:` URI) dentro de `result` (falta 15). Limite 8 MB por mensagem; acima disso → `tool_error{OVERSIZE}` + drop (fluxo 10).
 - Malformado (JSON inválido, `id`/`type` ausentes) → `tool_error{PROTOCOL}` e drop da mensagem; nunca derruba o socket por 1 frame ruim (exceção: abuso — 10 erros/10s → fechar com `4400`).
@@ -95,7 +95,7 @@ Lado extensão (reuso, sem reinventar):
 | Caso | Valor / mapeamento |
 |---|---|
 | Default por tool | **60 000 ms** no daemon (do `tools/call` ao `tool_response`). Cobre CDP lento; substitui os únicos timeouts existentes hoje (web_search 15 s `:1189`, web_fetch 30 s `:1288`, invento 12) como teto. |
-| Piloto | `navigate` 20 s (usa `waitForPageLoad` 8 s + folga); `snapshot`/`get_text`/`tabs` 15 s; `screenshot` 30 s. Qualquer estouro → `tool_error{TIMEOUT}`. |
+| Piloto | `navigate` 20 s; `computer` 30 s; leituras (`take_snapshot`, `get_page_text`, `tabs_context`, consoles, network) 15 s; resto, teto de 60 s. Qualquer estouro → `tool_error{TIMEOUT}`. |
 | Erros | `DENIED` (permission gate), `TAB_GONE` (aba fechada), `TIMEOUT`, `PROTOCOL` (schema/nome inválido), `INTERNAL` (exceção). `result.error` da extensão vira `tool_error` com `code` + `message=content` — nunca stack cru. |
 | Reconnect | Só a extensão disca (contrato). Backoff 500 ms × 60 tentativas (30 s, fluxo 9); após 60 falhas a extensão marca Disconnected e para. `stdin end` no modo `--stdio` encerra o daemon por completo (on-demand, sem zumbi); no modo `daemon start` (persistente) só fecha o stdio-client. |
 
@@ -108,19 +108,16 @@ Duas instâncias (ex.: 2 perfis, 2 versões) não podem dividir o bind:
 3. `--port 0` = porta efêmera só para teste; nesse modo o daemon sempre é primary e imprime a porta real no stdout.
 4. `install-skill` sempre aponta para a porta do primary (`config.json:{port}`).
 
-## 7. Tools piloto (5) — MCP `tools/list` ⇄ `executeTool`
+## 7. Tools dinâmicas — MCP `tools/list` ⇄ `executeTool`
 
-O daemon expõe **só estas 5** nesta fase (allowlist fecha as outras 13 de `ALL_TOOLS:433-452`, invento 1; `getAdapterTools` `chat-handler.ts:40-46`, invento 3, filtra igual no lado extensão). `input_schema` validado no daemon (falta 11) antes de atravessar o WS.
-
-| MCP `tools/call` | Extensão (`executeTool`) | `args` (schema) / notas |
-|---|---|---|
-| `snapshot` | `take_snapshot` | `{tabId?}` → `SNAPSHOT_TOOL`. Resolve tab ativa se ausente. Retorna texto da árvore (uids). |
-| `screenshot` | `computer{action:screenshot}` | `{tabId?}` → `COMPUTER_TOOL` restrito a `action="screenshot"`. Retorna `{content, images:[base64]}`. |
-| `navigate` | `navigate` | `{url?\|direction?, tabId?}` → `NAVIGATE_TOOL`. Só `http/https`; permission gate por domínio destino. |
-| `get_text` | `get_page_text` | `{tabId?}` → `GET_PAGE_TEXT_TOOL`. Trunca em 50 000 chars. |
-| `tabs` | `tabs_context` (+`tabs_create` se `url` presente) | `{}` lista `{id,url,title}`; `{url}` cria e retorna novo `id`. `tabId`/`sessionId` por chamada sustentam multi-sessão (fluxo 11). |
-
-`tools/list` retorna exatamente esses 5 `{name,description,parameters}` derivados de `ALL_TOOLS`/`getAdapterTools`. `tools/call` com outro nome → erro MCP `-32602` sem tocar na extensão. `tabId` ausente em qualquer piloto → aba ativa (seção 4), nunca `0`.
+A extensão é dona do inventário (`ALL_TOOLS`, 18 tools). O daemon não tem
+allowlist nem mapa de nomes: em `tools/list` envia o frame `list_tools`,
+recebe `tools_response` e repassa `{name,description,inputSchema}` direto.
+`tools/call` valida só forma (nome não vazio, tabId numérico, url http(s),
+sem aninhar `browser_batch`) e encaminha; nome desconhecido recebe o erro
+`INTERNAL` da extensão. `tabId` ausente → aba ativa (seção 4), nunca `0`.
+Texto acima de 50 000 chars é truncado com marcador; imagens saem como
+`image/jpeg`.
 
 ## 8. Segurança (localhost + token, sem exceção)
 
@@ -133,7 +130,7 @@ O daemon expõe **só estas 5** nesta fase (allowlist fecha as outras 13 de `ALL
 ## 9. Critérios de aceite (piloto implementável e testável)
 
 1. `go build ./...` gera um binário; `daemon --port 18765` serve `/status` 200 sem auth e rejeita `/ws` sem Bearer com 403.
-2. Extensão disca `/ws` com o token pareado; `POST /mcp tools/call{snapshot}` retorna árvore com `uid_`; `screenshot` retorna PNG base64 válido (só `[A-Za-z0-9+/=]`).
+2. Extensão disca `/ws` com o token pareado; `POST /mcp tools/call{take_snapshot}` retorna árvore com `uid_`; `tools/call{computer,action:screenshot}` retorna JPEG base64 válido (só `[A-Za-z0-9+/=]`); `tools/list` espelha as 18 do `ALL_TOOLS`.
 3. `navigate` para domínio bloqueado retorna `DENIED`; `tabId` omitido usa a aba ativa; segunda instância na mesma porta vira client (seção 6).
 4. Round-trip `tools/call→executeTool→ToolResult` coberto por teste Go (`internal/mcp` + `internal/bridge` com hub fake) — falta 16, escopo mínimo: 5 pilotos × ok/erro + timeout 60 s simulado.
 5. `daemon install-skill --client claude-code` escreve config e é idempotente; `daemon upgrade --check` não altera nada. Doc de host por OS (Win/mac/linux: path do token, porta, `register`) sai do `install-skill --help`, não de wiki externa.

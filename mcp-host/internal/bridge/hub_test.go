@@ -128,14 +128,24 @@ func TestCallDeniedMaps(t *testing.T) {
 	}
 }
 
-func TestUnknownToolNeverTouchesExtension(t *testing.T) {
+func TestUnknownToolForwardsToExtension(t *testing.T) {
 	h, fc := newTestHub()
-	_, _, err := h.Call("browser_evaluate", map[string]any{}, 500)
-	if err == nil {
-		t.Fatal("want validation error")
+	go func() {
+		deadline := time.Now().Add(2 * time.Second)
+		for fc.last() == "" && time.Now().Before(deadline) {
+			time.Sleep(5 * time.Millisecond)
+		}
+		raw := fc.last()
+		var req map[string]any
+		_ = json.Unmarshal([]byte(raw), &req)
+		_ = h.HandleMessage(`{"id":"` + req["id"].(string) + `","type":"tool_error","ok":false,"error":{"code":"INTERNAL","message":"unknown tool browser_evaluate"}}`)
+	}()
+	_, toolErr, err := h.Call("browser_evaluate", map[string]any{}, 5000)
+	if err != nil {
+		t.Fatalf("forward must not fail validation: %v", err)
 	}
-	if fc.last() != "" {
-		t.Fatal("unknown tool must not reach the extension")
+	if toolErr == nil || toolErr.Code != "INTERNAL" {
+		t.Fatalf("want extension INTERNAL error, got %+v", toolErr)
 	}
 }
 

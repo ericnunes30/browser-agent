@@ -35,21 +35,23 @@ const (
 
 const (
 	FrameRequest  = "tool_request"
+	FrameList     = "list_tools"
+	FrameToolList = "tools_response"
 	FrameResponse = "tool_response"
 	FrameError    = "tool_error"
 )
 
-// PilotTools is the phase-1 allowlist (§7). Anything else is rejected with
-// PROTOCOL without touching the extension.
-var PilotTools = []string{"snapshot", "screenshot", "navigate", "get_text", "tabs"}
-
-// toolTimeouts are the per-tool budgets; the 60 s default is the ceiling (§5).
+// toolTimeouts are the per-tool budgets (canonical extension names);
+// the 60 s default is the ceiling (§5).
 var toolTimeouts = map[string]int{
-	"navigate":   20000,
-	"snapshot":   15000,
-	"get_text":   15000,
-	"tabs":       15000,
-	"screenshot": 30000,
+	"navigate":              20000,
+	"take_snapshot":         15000,
+	"get_page_text":         15000,
+	"tabs_context":          15000,
+	"tabs_create":           15000,
+	"read_console_messages": 15000,
+	"read_network_requests": 15000,
+	"computer":              30000,
 }
 
 // ToolRequest is the daemon→extension frame.
@@ -88,16 +90,6 @@ type ToolErrorFrame struct {
 	Type  string        `json:"type"`
 	Ok    bool          `json:"ok"`
 	Error *ErrorPayload `json:"error"`
-}
-
-// IsPilot reports whether tool is in the phase-1 allowlist.
-func IsPilot(tool string) bool {
-	for _, t := range PilotTools {
-		if t == tool {
-			return true
-		}
-	}
-	return false
 }
 
 // TimeoutFor returns the per-tool budget (§5 table).
@@ -173,8 +165,6 @@ func NormalizeArgs(args map[string]any) {
 	}
 }
 
-var navigateDirections = map[string]bool{"back": true, "forward": true, "reload": true}
-
 func checkURL(v any) error {
 	s, ok := v.(string)
 	if !ok || s == "" {
@@ -187,24 +177,14 @@ func checkURL(v any) error {
 	return nil
 }
 
-func rejectUnknown(args map[string]any, allowed map[string]bool) error {
-	for k := range args {
-		if !allowed[k] {
-			return fmt.Errorf("unexpected arg %q", k)
-		}
-	}
-	return nil
-}
-
-// ValidateToolCall enforces the pilot allowlist + input_schema before
-// anything crosses the WS (§7, falta 11). browser_batch (nested or not) is
-// rejected with PROTOCOL.
+// ValidateToolCall enforces generic input_schema rules before anything
+// crosses the WS (§7). The extension owns the tool inventory (dynamic
+// list_tools); the daemon only guards shape: non-empty name, numeric tabId,
+// http(s) url, bounded maxChars, no browser_batch nesting. Unknown names
+// forward — the extension answers unknown tools with an INTERNAL error.
 func ValidateToolCall(tool string, args map[string]any) error {
-	if tool == "browser_batch" {
-		return fmt.Errorf("PROTOCOL: browser_batch nesting is blocked (§4)")
-	}
-	if !IsPilot(tool) {
-		return fmt.Errorf("PROTOCOL: unknown tool %q (pilot: %s)", tool, strings.Join(PilotTools, ","))
+	if tool == "" {
+		return fmt.Errorf("PROTOCOL: empty tool name")
 	}
 	if args == nil {
 		args = map[string]any{}
@@ -215,53 +195,33 @@ func ValidateToolCall(tool string, args map[string]any) error {
 			return fmt.Errorf("PROTOCOL: tabId must be a number")
 		}
 	}
-	switch tool {
-	case "snapshot", "screenshot":
-		return rejectUnknown(args, map[string]bool{"tabId": true})
-	case "get_text":
-		if err := rejectUnknown(args, map[string]bool{"tabId": true, "maxChars": true}); err != nil {
+	if v, ok := args["url"]; ok {
+		if err := checkURL(v); err != nil {
 			return fmt.Errorf("PROTOCOL: %w", err)
 		}
-		if v, ok := args["maxChars"]; ok {
-			n, isNum := asInt(v)
-			if !isNum || n < 1 || n > 50000 {
-				return fmt.Errorf("PROTOCOL: maxChars must be 1..50000")
-			}
-		}
-		return nil
-	case "navigate":
-		if err := rejectUnknown(args, map[string]bool{"tabId": true, "url": true, "direction": true}); err != nil {
-			return fmt.Errorf("PROTOCOL: %w", err)
-		}
-		_, hasURL := args["url"]
-		_, hasDir := args["direction"]
-		if !hasURL && !hasDir {
-			return fmt.Errorf("PROTOCOL: navigate requires url or direction")
-		}
-		if hasURL {
-			if err := checkURL(args["url"]); err != nil {
-				return fmt.Errorf("PROTOCOL: %w", err)
-			}
-		}
-		if hasDir {
-			d, ok := args["direction"].(string)
-			if !ok || !navigateDirections[d] {
-				return fmt.Errorf("PROTOCOL: direction must be back|forward|reload")
-			}
-		}
-		return nil
-	case "tabs":
-		if err := rejectUnknown(args, map[string]bool{"tabId": true, "url": true}); err != nil {
-			return fmt.Errorf("PROTOCOL: %w", err)
-		}
-		if _, ok := args["url"]; ok {
-			if err := checkURL(args["url"]); err != nil {
-				return fmt.Errorf("PROTOCOL: %w", err)
-			}
-		}
-		return nil
 	}
-	return fmt.Errorf("PROTOCOL: unknown tool %q", tool)
+	if v, ok := args["maxChars"]; ok {
+		n, isNum := asInt(v)
+		if !isNum || n < 1 || n > 50000 {
+			return fmt.Errorf("PROTOCOL: maxChars must be 1..50000")
+		}
+	}
+	if tool == "browser_batch" {
+		if acts, ok := args["actions"].([]any); ok {
+			for _, a := range acts {
+				m, ok := a.(map[string]any)
+				if !ok {
+					continue
+				}
+				for _, k := range []string{"tool", "name"} {
+					if s, _ := m[k].(string); s == "browser_batch" {
+						return fmt.Errorf("PROTOCOL: browser_batch nesting is blocked (§4)")
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // IsBase64Strict checks the screenshot charset (raw base64, no data: URI).

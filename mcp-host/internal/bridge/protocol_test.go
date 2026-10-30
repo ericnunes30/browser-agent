@@ -6,29 +6,28 @@ import (
 	"testing"
 )
 
-func TestPilotAllowlist(t *testing.T) {
-	if len(PilotTools) != 5 {
-		t.Fatalf("want 5 pilot tools, got %d", len(PilotTools))
-	}
-	for _, tool := range []string{"snapshot", "screenshot", "navigate", "get_text", "tabs"} {
-		if !IsPilot(tool) {
-			t.Fatalf("%s should be pilot", tool)
-		}
+func TestValidateAcceptsAnyInventoriedName(t *testing.T) {
+	// Inventário é dinâmico (extensão dona); o daemon só valida forma.
+	for _, tool := range []string{"take_snapshot", "computer", "navigate", "get_page_text", "tabs_context", "browser_batch", "javascript_tool", "web_search"} {
 		if err := ValidateToolCall(tool, map[string]any{}); err != nil {
-			if tool == "navigate" {
-				continue // requires url|direction
-			}
 			t.Fatalf("%s empty args: %v", tool, err)
 		}
+	}
+	if err := ValidateToolCall("", map[string]any{}); err == nil {
+		t.Fatal("empty tool name must be rejected")
 	}
 }
 
 func TestValidateUnknownTool(t *testing.T) {
-	if err := ValidateToolCall("browser_evaluate", map[string]any{}); err == nil {
-		t.Fatal("non-pilot tool must be rejected")
+	// Nomes desconhecidos agora ENCAMINHAM (a extensão responde o erro);
+	// só forma inválida é rejeitada aqui.
+	if err := ValidateToolCall("browser_evaluate", map[string]any{}); err != nil {
+		t.Fatalf("unknown names must forward, got: %v", err)
 	}
-	if err := ValidateToolCall("browser_batch", map[string]any{}); err == nil {
-		t.Fatal("browser_batch must be rejected")
+	if err := ValidateToolCall("browser_batch", map[string]any{"actions": []any{
+		map[string]any{"tool": "browser_batch", "input": map[string]any{}},
+	}}); err == nil {
+		t.Fatal("nested browser_batch must be rejected")
 	}
 }
 
@@ -36,15 +35,10 @@ func TestValidateNavigate(t *testing.T) {
 	if err := ValidateToolCall("navigate", map[string]any{"url": "https://example.com"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := ValidateToolCall("navigate", map[string]any{"direction": "back"}); err != nil {
-		t.Fatal(err)
-	}
 	for _, bad := range []map[string]any{
-		{},
 		{"url": "ftp://example.com/x"},
 		{"url": "not a url"},
-		{"direction": "sideways"},
-		{"url": "https://example.com", "evil": 1},
+		{"tabId": "abc"},
 	} {
 		if err := ValidateToolCall("navigate", bad); err == nil {
 			t.Fatalf("should reject %#v", bad)
@@ -53,13 +47,13 @@ func TestValidateNavigate(t *testing.T) {
 }
 
 func TestValidateTabs(t *testing.T) {
-	if err := ValidateToolCall("tabs", map[string]any{}); err != nil {
+	if err := ValidateToolCall("tabs_context", map[string]any{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := ValidateToolCall("tabs", map[string]any{"url": "https://example.com"}); err != nil {
+	if err := ValidateToolCall("tabs_create", map[string]any{"url": "https://example.com"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := ValidateToolCall("tabs", map[string]any{"url": "file:///etc/passwd"}); err == nil {
+	if err := ValidateToolCall("tabs_create", map[string]any{"url": "file:///etc/passwd"}); err == nil {
 		t.Fatal("non-http url must be rejected")
 	}
 }
@@ -75,7 +69,7 @@ func TestTabIDNormalization(t *testing.T) {
 	if args["tabId"] != float64(7) {
 		t.Fatal("positive tabId must survive")
 	}
-	if err := ValidateToolCall("snapshot", map[string]any{"tabId": "abc"}); err == nil {
+	if err := ValidateToolCall("take_snapshot", map[string]any{"tabId": "abc"}); err == nil {
 		t.Fatal("string tabId must be rejected")
 	}
 }
@@ -85,18 +79,18 @@ func TestTimeouts(t *testing.T) {
 		t.Fatalf("default ceiling must be 60s, got %d", DefaultTimeoutMs)
 	}
 	cases := map[string]int{
-		"navigate": 20000, "snapshot": 15000, "get_text": 15000,
-		"tabs": 15000, "screenshot": 30000,
+		"navigate": 20000, "take_snapshot": 15000, "get_page_text": 15000,
+		"tabs_context": 15000, "computer": 30000,
 	}
 	for tool, want := range cases {
 		if got := TimeoutFor(tool); got != want {
 			t.Fatalf("%s: want %d got %d", tool, want, got)
 		}
 	}
-	if got := ClampTimeout("snapshot", 0); got != 15000 {
+	if got := ClampTimeout("take_snapshot", 0); got != 15000 {
 		t.Fatalf("default per tool, got %d", got)
 	}
-	if got := ClampTimeout("snapshot", 999999); got != 60000 {
+	if got := ClampTimeout("take_snapshot", 999999); got != 60000 {
 		t.Fatalf("clamped to ceiling, got %d", got)
 	}
 }
