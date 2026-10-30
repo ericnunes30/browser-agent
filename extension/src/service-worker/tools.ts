@@ -1788,8 +1788,16 @@ async function captureScreenshot(tabId: number): Promise<string> {
   try {
     // Try captureVisibleTab first (simpler, more reliable, Claude-compatible)
     // JPEG q60: menor e mais rápido que PNG; PNG full-res já travou o capture.
+    // Traz a aba/janela para frente antes: captureVisibleTab trava em
+    // janela minimizada ou aba de fundo (nunca resolve nem rejeita).
     const tab = await chrome.tabs.get(tabId);
-    if (tab.active && tab.windowId !== undefined) {
+    if (tab.windowId !== undefined) {
+      try {
+        await chrome.windows.update(tab.windowId, { focused: true });
+      } catch { /* segue: tenta capturar mesmo assim */ }
+      try {
+        await chrome.tabs.update(tabId, { active: true });
+      } catch { /* segue */ }
       const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 60 });
       return dataUrl; // Already in data:image/jpeg;base64,... format
     }
