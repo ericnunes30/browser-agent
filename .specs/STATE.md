@@ -126,9 +126,9 @@
 
 - **Feature**: (nenhuma — higiene de repo)
 - **Phase / Task**: Reorg `.specs` — renomeacao 00–10 e reformulacao do STATE
-- **Completed**: limpeza da raiz, features renomeadas 00–10, `STATE.md` promovido para `.specs/`, `PROJECT.md`/`ROADMAP.md` arquivados em `.docs/archive/`, STATE reformulado em AD-NNN + Handoff
-- **In-progress** (file:line): `.specs/STATE.md:1` — recem reescrito, nao commitado
-- **Next step**: Usuario revisar o STATE e decidir o commit
-- **Blockers**: pendente — confirmar exclusao de `.bsd/*`, `.docs/archive/{PROJECT,ROADMAP}.md`, `extension/key.pem` do git
+- **Completed**: limpeza da raiz, features renomeadas 00–10, `STATE.md` promovido para `.specs/`, `PROJECT.md`/`ROADMAP.md` arquivados em `.docs/archive/`, STATE reformulado em AD-NNN + Handoff, rotação da chave CRX (nova `key.pem` local-only, `manifest key` novo, chave antiga purgada do histórico via filter-branch + gc, backup em `backup/pre-key-rotation`)
+- **In-progress** (file:line): `.specs/STATE.md` — Handoff sendo atualizado, nao commitado
+- **Next step**: Commitar este STATE e depois push com `git push --force-with-lease origin main` (histórico reescrito) + deletar branches remotos obsoletos
+- **Blockers**: push pendente (exige --force); branches remotos `feat/*`, `feature/*`, `fix/*` e `refs/pull/*` ainda expõem a chave ANTIGA no servidor — inofensiva pós-rotação, mas deletar os branches no push day; reinstalar a extensão dev (novo ID, storage zerado)
 - **Uncommitted files**: renames raiz + `.specs` (staged), `.gitignore` (modified), `README.md` (untracked), `.docs/wayfinding-pilot-pendencias.md` (untracked)
 - **Branch**: main
