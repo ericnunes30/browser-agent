@@ -126,9 +126,9 @@
 
 - **Feature**: (nenhuma — higiene de repo)
 - **Phase / Task**: Reorg `.specs` — renomeacao 00–10 e reformulacao do STATE
-- **Completed**: limpeza da raiz, features renomeadas 00–10, `STATE.md` promovido para `.specs/`, `PROJECT.md`/`ROADMAP.md` arquivados em `.docs/archive/`, STATE reformulado em AD-NNN + Handoff, rotação da chave CRX (nova `key.pem` local-only, `manifest key` novo, chave antiga purgada do histórico via filter-branch + gc, backup em `backup/pre-key-rotation`)
+- **Completed**: limpeza da raiz, features 00–10, STATE em AD-NNN + Handoff, rotação da chave CRX com purga do histórico, push `main` com force (sincronizado), branches remotos obsoletos deletados (conteúdo preservado em `archive/*` locais)
 - **In-progress** (file:line): `.specs/STATE.md` — Handoff sendo atualizado, nao commitado
-- **Next step**: Commitar este STATE e depois push com `git push --force-with-lease origin main` (histórico reescrito) + deletar branches remotos obsoletos
-- **Blockers**: push pendente (exige --force); branches remotos `feat/*`, `feature/*`, `fix/*` e `refs/pull/*` ainda expõem a chave ANTIGA no servidor — inofensiva pós-rotação, mas deletar os branches no push day; reinstalar a extensão dev (novo ID, storage zerado)
+- **Next step**: Commitar este STATE + push normal; reinstalar a extensão dev (novo ID)
+- **Blockers**: nenhum. Residual: `refs/pull/1-2/head` no servidor ainda expõem a chave ANTIGA (inofensiva pós-rotação); fechar esses PRs se já merged
 - **Uncommitted files**: renames raiz + `.specs` (staged), `.gitignore` (modified), `README.md` (untracked), `.docs/wayfinding-pilot-pendencias.md` (untracked)
 - **Branch**: main
