@@ -398,11 +398,13 @@ func ServeWS(h *Hub, expectedToken string, w http.ResponseWriter, r *http.Reques
 		// Only the initial pairing handshake may use ?token=.
 		token = r.URL.Query().Get("token")
 	}
-	// Trust-on-first-use (SPEC §3): loopback SEM token passa uma única vez,
-	// antes de qualquer pareamento. O 1º handshake válido grava `paired`
-	// (via OnAuth) e trava a janela; depois disso, token sempre exigido.
+	// Trust-on-first-use por slot vazio (SPEC §3): loopback SEM token passa
+	// sempre que ninguém estiver conectado. O 1º handshake válido entrega o
+	// token via `welcome` (e grava `paired`, que trava só o endpoint /pair).
+	// Sessão ativa nunca é tomada: com extensão conectada, sem token → 403;
+	// com token válido, o dono retoma o slot. Threat model: mesma máquina.
 	tofu := false
-	if token == "" && !auth.IsPaired() {
+	if token == "" && !h.Connected() {
 		tofu = true // segue para o upgrade sem token
 	} else if !auth.Accepts(token, expectedToken) {
 		h.log.Log("warn", "ws rejected (bad token)", "", nil, nil)
