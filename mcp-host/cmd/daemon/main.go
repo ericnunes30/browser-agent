@@ -180,10 +180,11 @@ func serveCmd(args []string) int {
 				fmt.Fprintln(os.Stderr, "http:", err)
 			}
 		}()
-		// stdio session; EOF ends stdio only — the daemon keeps serving (§5).
+		// On-demand lifecycle: stdin EOF = MCP session ended → shut down
+		// everything (HTTP+WS too). Nothing stays resident when the agent
+		// goes away. Use `daemon start` for an explicit persistent
+		// background instance.
 		mcpSrv.ServeStdio(os.Stdin, os.Stdout)
-		fmt.Fprintln(os.Stderr, "stdio closed; HTTP still serving — Ctrl+C to stop")
-		waitSignal()
 		_ = srv.Close()
 		removePid()
 		return 0

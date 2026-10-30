@@ -34,8 +34,9 @@ func TestInstallClaudeCodeIdempotent(t *testing.T) {
 	var cfg map[string]any
 	_ = json.Unmarshal(after, &cfg)
 	srv := cfg["mcpServers"].(map[string]any)["browser-agent"].(map[string]any)
-	if srv["url"] != "http://127.0.0.1:18765/mcp" {
-		t.Fatalf("wrong block: %v", srv)
+	args, _ := srv["args"].([]any)
+	if srv["command"] == nil || len(args) != 3 || args[2] != "--stdio" {
+		t.Fatalf("wrong block (want stdio spawn): %v", srv)
 	}
 	_ = h
 	_ = filepath.Separator

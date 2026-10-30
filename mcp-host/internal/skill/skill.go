@@ -62,23 +62,26 @@ func configPath(client string) string {
 	return ""
 }
 
-func mcpURL(port int) string { return fmt.Sprintf("http://127.0.0.1:%d/mcp", port) }
-
 // desiredBlock returns the MCP server block for the client.
-// HTTP clients point at the primary port (§6.4); Claude Desktop (legacy
-// stdio-only) spawns the daemon via --stdio.
+// On-demand lifecycle: every client spawns the daemon via stdio, so nothing
+// stays resident between sessions. The agent starts the daemon when the MCP
+// connection starts and it exits on stdin EOF. `daemon start` remains for an
+// explicit persistent background instance.
+func stdioArgs(port int) []string {
+	if port != 0 {
+		return []string{"--port", fmt.Sprint(port), "--stdio"}
+	}
+	return []string{"--stdio"}
+}
+
 func desiredBlock(client string, port int, exePath string) map[string]any {
 	switch client {
 	case ClientClaudeCode:
-		return map[string]any{"type": "http", "url": mcpURL(port)}
+		return map[string]any{"command": exePath, "args": stdioArgs(port)}
 	case ClientOpencode:
-		return map[string]any{"type": "remote", "url": mcpURL(port)}
+		return map[string]any{"type": "local", "command": append([]string{exePath}, stdioArgs(port)...), "enabled": true, "timeout": 60000}
 	case ClientClaudeDesktop:
-		args := []string{"--stdio"}
-		if port != 0 {
-			args = append([]string{"--port", fmt.Sprint(port)}, args...)
-		}
-		return map[string]any{"command": exePath, "args": args}
+		return map[string]any{"command": exePath, "args": stdioArgs(port)}
 	}
 	return nil
 }
@@ -121,7 +124,7 @@ func Install(client string, port int, exePath string) (string, error) {
 	if port <= 0 {
 		return "", fmt.Errorf("skill: port must come from the primary (config.json:{port})")
 	}
-	if client == ClientClaudeDesktop && exePath == "" {
+	if exePath == "" {
 		exe, err := os.Executable()
 		if err != nil {
 			return "", fmt.Errorf("skill: self path: %w", err)
@@ -180,15 +183,15 @@ func HelpText() string {
 		"  The extension stores the Bearer token in chrome.storage.local.",
 		"  `daemon --reset-token` invalidates all pairings.",
 		"",
-		"Register (run at login):",
-		"  Windows: Task Scheduler → `daemon --port 18765` at logon.",
-		"  macOS:   launchd plist → `daemon --port 18765` (RunAtLoad).",
-		"  Linux:   systemd --user unit → `daemon --port 18765` (WantedBy=default.target).",
+		"Lifecycle (on-demand, default):",
+		"  The agent spawns `daemon --stdio` when the MCP connection starts;",
+		"  stdin EOF ends the session and the daemon exits — nothing resident.",
+		"  `daemon start` detaches an explicit persistent instance instead.",
 		"",
 		"Clients (--client " + strings.Join(Clients, "|") + "):",
-		"  claude-code:    HTTP block {type:http, url:http://127.0.0.1:<port>/mcp} in ~/.claude.json",
-		"  opencode:       remote block in <config>/opencode/opencode.json",
-		"  claude-desktop: stdio block {command:<daemon>, args:[--stdio]} (legacy stdio-only)",
+		"  claude-code:    stdio block {command:<daemon>, args:[--stdio]} in ~/.claude.json",
+		"  opencode:       local block {type:local, command:[<daemon>, --stdio]} in <config>/opencode/opencode.json",
+		"  claude-desktop: stdio block {command:<daemon>, args:[--stdio]}",
 		"",
 		"Commands: start|stop|status|logs [--tail N]|upgrade [--check]|install-skill --client X",
 		"",

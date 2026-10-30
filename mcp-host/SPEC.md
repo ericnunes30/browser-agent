@@ -32,13 +32,13 @@ Nada fora de `mcp-host/` nesta fase. Lado extensão = só o cliente WS
 
 | Área | Comportamento |
 |---|---|
-| MCP stdio | `daemon --stdio`: MCP JSON-RPC 2024-11-05 em stdin/stdout (1 JSON por linha). Para clientes sem HTTP (Claude Code CLI). |
+| MCP stdio | `daemon --stdio`: ciclo de vida on-demand (padrão). O agente spawna o daemon ao abrir a conexão MCP; stdin EOF encerra a sessão e o daemon sai por completo (HTTP+WS junto). Nada fica residente. `daemon start` existe só para instância persistente explícita. |
 | MCP HTTP | `POST http://127.0.0.1:<porta>/mcp` Streamable HTTP (`"type":"streamableHttp"`). `tools/list` + `tools/call` a partir do subset piloto (seção 7), `input_schema` validado no daemon antes de enviar à extensão. |
 | Pareamento/token | Na 1ª boot gera 32 bytes `crypto/rand` hex em `%APPDATA%/BrowserAgent/token` (0600 equivalente, ACL usuário). Imprime pairing code de 6 dígitos no stdout + `/status`. Extensão pede o código uma vez, guarda em `chrome.storage.local`, usa como Bearer depois. `daemon --reset-token` regenera. |
 | Fila | `queue/queue.go`: FIFO por `tabId`, 1 request in-flight por tab; tabs diferentes em paralelo. `browser_batch` continua sequencial dentro da extensão (`tools.ts:1721-1734`, sem aninhar). |
 | Logs | JSONL `{ts,level,msg,tool,tabId,latencyMs}` em `%APPDATA%/BrowserAgent/logs/`. `GET /status` expõe `lastError` + `uptime`. Sem PII de página (só url domain). |
 | Upgrade | `daemon upgrade [--check]`: compara versão local × endpoint release, baixa `.exe`, valida sha256, troca atômica, reinicia. Nunca auto-upgrada sem comando. |
-| install-skill | `daemon install-skill --client <claude-code\|opencode\|claude-desktop>`: escreve o bloco MCP (`stdio` ou `http://127.0.0.1:<porta>/mcp`) no config do cliente + registra `native-messaging-host` se necessário. Idempotente. |
+| install-skill | `daemon install-skill --client <claude-code\|opencode\|claude-desktop>`: escreve bloco MCP **stdio** (`command:<daemon> args:[--stdio]`, opencode `type:local`) no config do cliente. Idempotente. O agente spawna o daemon por sessão; sem residente. |
 
 Flows herdados que o daemon absorve: `/status` aberto sem auth + `/ws` com token (padrão Kimi, fluxo 6–8); bridge em 2 saltos WS-na-borda / JSONL-no-loopback (fluxo 13); `register` global do binário (fluxo 14). Não copiar: exposição fora de `127.0.0.1` nem porta fixa sem config (fluxo 15) — bind sempre em loopback, porta via config/flag.
 
@@ -96,7 +96,7 @@ Lado extensão (reuso, sem reinventar):
 | Default por tool | **60 000 ms** no daemon (do `tools/call` ao `tool_response`). Cobre CDP lento; substitui os únicos timeouts existentes hoje (web_search 15 s `:1189`, web_fetch 30 s `:1288`, invento 12) como teto. |
 | Piloto | `navigate` 20 s (usa `waitForPageLoad` 8 s + folga); `snapshot`/`get_text`/`tabs` 15 s; `screenshot` 30 s. Qualquer estouro → `tool_error{TIMEOUT}`. |
 | Erros | `DENIED` (permission gate), `TAB_GONE` (aba fechada), `TIMEOUT`, `PROTOCOL` (schema/nome inválido), `INTERNAL` (exceção). `result.error` da extensão vira `tool_error` com `code` + `message=content` — nunca stack cru. |
-| Reconnect | Só a extensão disca (contrato). Backoff 500 ms × 60 tentativas (30 s, fluxo 9); após 60 falhas a extensão marca Disconnected e para (sem `exit(0)` — é SW, não processo). Daemon nunca sai porque a extensão sumiu; apenas desregistra o hub e mantém `/status` + MCP respondendo `TAB_GONE`. `stdin end` fecha stdio-client sem matar o daemon (sem zumbi, fluxo 9). |
+| Reconnect | Só a extensão disca (contrato). Backoff 500 ms × 60 tentativas (30 s, fluxo 9); após 60 falhas a extensão marca Disconnected e para. `stdin end` no modo `--stdio` encerra o daemon por completo (on-demand, sem zumbi); no modo `daemon start` (persistente) só fecha o stdio-client. |
 
 ## 6. Regra primary/client por porta (default 18765)
 
